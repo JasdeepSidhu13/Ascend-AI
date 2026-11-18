@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Flag, Home, Moon, Sparkles, Sun, BookOpen } from "lucide-react";
+import { LoginView } from "./LoginView";
 import { OnboardingView } from "./OnboardingView";
 
 export type FindingView = {
@@ -124,6 +125,12 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     const res = await fetch("/api/state", { cache: "no-store" });
     if (res.status === 401) {
+      setState(null);
+      try {
+        sessionStorage.removeItem("ascend-state");
+      } catch {
+        /* ignore */
+      }
       setError("signed-out");
       return;
     }
@@ -147,12 +154,6 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
       stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     setThemeState(next);
     document.documentElement.classList.toggle("dark", next === "dark");
-    try {
-      const cached = sessionStorage.getItem("ascend-state");
-      if (cached) setState(JSON.parse(cached) as AppState);
-    } catch {
-      /* ignore */
-    }
     refresh();
   }, [refresh]);
 
@@ -163,26 +164,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   }
 
   if (error === "signed-out") {
-    if (path === "/login") {
-      return <>{children}</>;
-    }
-    return (
-      <main className="min-h-screen grid place-items-center px-6">
-        <div className="max-w-md text-center">
-          <p className="kicker">Ascend</p>
-          <h1 className="display text-4xl mt-3">A private coaching room</h1>
-          <p className="mt-4 text-[var(--muted)] leading-relaxed">
-            Sign in to see only your own check-ins, insights and memory.
-          </p>
-          <a
-            href="/login"
-            className="mt-6 inline-block px-5 py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]"
-          >
-            Sign in
-          </a>
-        </div>
-      </main>
-    );
+    return <LoginView />;
   }
 
   if (!state) {
