@@ -41,6 +41,7 @@ export type AppState = {
     onboardingCompletedAt: string | null;
     sampleData: boolean;
     simulated: boolean;
+    authVia: "cursor" | "password";
   };
   leading: InsightView | null;
   insights: InsightView[];
@@ -162,15 +163,23 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   }
 
   if (error === "signed-out") {
+    if (path === "/login") {
+      return <>{children}</>;
+    }
     return (
       <main className="min-h-screen grid place-items-center px-6">
         <div className="max-w-md text-center">
           <p className="kicker">Ascend</p>
           <h1 className="display text-4xl mt-3">A private coaching room</h1>
           <p className="mt-4 text-[var(--muted)] leading-relaxed">
-            This app is meant to be published as private or team. Sign in with Cursor to open it.
-            Nothing here is public.
+            Sign in to see only your own check-ins, insights and memory.
           </p>
+          <a
+            href="/login"
+            className="mt-6 inline-block px-5 py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]"
+          >
+            Sign in
+          </a>
         </div>
       </main>
     );
@@ -199,6 +208,10 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (path === "/login") {
+    return <>{children}</>;
+  }
+
   const hideNav = path === "/check-in" || path === "/onboarding";
 
   return (
@@ -208,13 +221,19 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           <aside className="hidden lg:flex flex-col gap-8 px-6 py-8 border-r hairline">
             <Brand />
             <Nav />
-            <button
-              className="mt-auto flex items-center gap-2 text-sm text-[var(--muted)]"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-              {theme === "dark" ? "Light" : "Dark"}
-            </button>
+            <div className="mt-auto space-y-3">
+              <p className="text-xs text-[var(--muted)] leading-snug">
+                {state.profile.displayName || "Signed in"}
+                <span className="block truncate">{state.profile.email}</span>
+              </p>
+              <button
+                className="flex items-center gap-2 text-sm text-[var(--muted)]"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                {theme === "dark" ? "Light" : "Dark"}
+              </button>
+            </div>
           </aside>
         )}
         <div className={hideNav ? "" : "pb-24 lg:pb-10"}>

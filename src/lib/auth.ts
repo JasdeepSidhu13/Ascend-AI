@@ -1,7 +1,8 @@
-import { requireIdentity, getIdentity } from "../../cursor/identity.js";
+import { getIdentity } from "../../cursor/identity.js";
 import { sql } from "./db";
 import type { Profile, Tone } from "./types";
 import { readJson } from "./db";
+import { userFromSession } from "./session";
 
 const PRIVATE = { "cache-control": "private, no-store" };
 
@@ -9,20 +10,54 @@ export function json(data: unknown, status = 200): Response {
   return Response.json(data, { status, headers: PRIVATE });
 }
 
-export async function requireViewer(request: Request) {
-  const identity = await requireIdentity(request);
-  if (identity instanceof Response) {
-    identity.headers.set("cache-control", "private, no-store");
-    return identity;
+export type Viewer = {
+  sub: string;
+  email: string;
+  name: string;
+  simulated: boolean;
+  kind: "person" | "key";
+  via: AuthVia;
+};
+
+export async function requireViewer(request: Request): Promise<Viewer | Response> {
+  const viewer = await resolveViewer(request);
+  if (!viewer) return json({ error: "unauthorized" }, 401);
+  return viewer;
+}
+
+export async function resolveViewer(request: Request): Promise<Viewer | null> {
+  const sessionUser = await userFromSession(request);
+  if (sessionUser) {
+    return {
+      sub: sessionUser.id,
+      email: sessionUser.email,
+      name: sessionUser.display_name,
+      simulated: false,
+      kind: "person",
+      via: "password",
+    };
   }
-  return identity;
+  const identity = await getIdentity(request);
+  if (identity.verified) {
+    return {
+      sub: identity.sub,
+      email: identity.email,
+      name: identity.name || "",
+      simulated: Boolean(identity.simulated),
+      kind: identity.kind === "key" ? "key" : "person",
+      via: "cursor",
+    };
+  }
+  return null;
 }
 
 export async function optionalViewer(request: Request) {
   return getIdentity(request);
 }
 
-type UserRow = {
+export type AuthVia = "cursor" | "password";
+
+export type UserRow = {
   id: string;
   email: string;
   display_name: string;
@@ -36,11 +71,14 @@ type UserRow = {
   reminder_weekday: number;
   onboarding_completed_at: string | Date | null;
   sample_data: boolean;
+  password_hash?: string | null;
+  email_unique?: string | null;
 };
 
 export function toProfile(
   row: UserRow,
   simulated: boolean,
+  authVia: AuthVia = "cursor",
 ): Profile {
   return {
     id: row.id,
@@ -59,6 +97,7 @@ export function toProfile(
       : null,
     sampleData: row.sample_data,
     simulated,
+    authVia,
   };
 }
 

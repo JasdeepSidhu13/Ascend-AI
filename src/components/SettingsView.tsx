@@ -36,11 +36,11 @@ export function SettingsView() {
         <p className="kicker">Settings</p>
         <h1 className="display text-4xl mt-2">The room, not the coach</h1>
       </header>
-      {p.simulated && (
-        <p className="card p-4 text-sm">
-          Local preview uses a simulated viewer ({p.email}). Published as private or team, this is your Cursor sign-in.
-        </p>
-      )}
+      <p className="card p-4 text-sm">
+        Signed in as <span className="font-medium">{p.email || p.displayName}</span>
+        {p.authVia === "password" ? " with email and password" : p.simulated ? " (local preview)" : " with Cursor"}.
+        Check-ins and memory for this account stay private to it.
+      </p>
       <label className="block">
         <span className="kicker">Name</span>
         <input className="mt-2 w-full h-12 rounded-2xl border hairline px-3 bg-[var(--card)]" value={name} onChange={(e) => setName(e.target.value)} />
@@ -88,6 +88,22 @@ export function SettingsView() {
         Save
       </button>
       {msg && <p className="text-sm text-[var(--muted)]">{msg}</p>}
+      {p.authVia === "password" && (
+        <button
+          className="w-full py-3 rounded-full border hairline"
+          onClick={async () => {
+            await fetch("/api/auth/logout", { method: "POST" });
+            try {
+              sessionStorage.removeItem("ascend-state");
+            } catch {
+              /* ignore */
+            }
+            window.location.href = "/login";
+          }}
+        >
+          Sign out
+        </button>
+      )}
       <section className="card p-5 space-y-3">
         <p className="kicker">Your data</p>
         <p className="text-sm text-[var(--muted)]">One-click export. Full delete. Nothing is sent to an LLM except the small assembled context, and never for training.</p>

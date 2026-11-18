@@ -8,12 +8,13 @@ type IdentityLike = {
   name?: string;
   simulated?: boolean;
   kind?: string;
+  via?: "cursor" | "password";
 };
 
 export async function bootstrapProfile(identity: IdentityLike): Promise<Profile> {
   await ensureCatalog();
   let row = await loadUser(identity.sub);
-  if (!row && identity.simulated) {
+  if (!row && identity.simulated && identity.via !== "password") {
     await seedSample(identity.sub, {
       email: identity.email,
       name: identity.name || "Alex",
@@ -27,5 +28,5 @@ export async function bootstrapProfile(identity: IdentityLike): Promise<Profile>
       displayName: identity.name || "",
     });
   }
-  return toProfile(row, Boolean(identity.simulated));
+  return toProfile(row, Boolean(identity.simulated), identity.via ?? "cursor");
 }

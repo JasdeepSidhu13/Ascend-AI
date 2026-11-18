@@ -94,4 +94,5 @@ export type Profile = {
   onboardingCompletedAt: string | null;
   sampleData: boolean;
   simulated: boolean;
+  authVia: "cursor" | "password";
 };
