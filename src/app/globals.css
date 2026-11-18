@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f3eee4;
+  --bg-2: #e8e0d2;
+  --card: #fbf7f0;
+  --ink: #1a1714;
+  --muted: #5e574e;
+  --line: #d6ccbc;
+  --accent: #21564a;
+  --accent-soft: #d7e6df;
+  --warn: #9a4f24;
+  --warn-soft: #f3e1d3;
+  --good: #2c6a4c;
+  --good-soft: #d9eadf;
+  --focus: #21564a;
+  --shadow: 0 1px 0 rgba(26, 23, 20, 0.04);
+}
+
+.dark {
+  --bg: #13110e;
+  --bg-2: #1c1915;
+  --card: #1a1714;
+  --ink: #f3eee4;
+  --muted: #b7afa4;
+  --line: #2e2923;
+  --accent: #8fbfb0;
+  --accent-soft: #24332e;
+  --warn: #e0a078;
+  --warn-soft: #3a2a20;
+  --good: #8fbfa3;
+  --good-soft: #1e2c24;
+  --focus: #8fbfb0;
+  --shadow: none;
+}
+
+@theme inline {
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01" on, "tnum" on;
+  letter-spacing: -0.011em;
+}
+
+h1,
+h2,
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-optical-sizing: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.hairline {
+  border-color: var(--line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
