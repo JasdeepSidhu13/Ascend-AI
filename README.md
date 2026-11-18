@@ -2,7 +2,7 @@
 
 A private life-coaching loop: adaptive check-ins, statistics-first insights, goals with SMART actions, and layered memory.
 
-Each signed-in account only sees its own data. Sign up or sign in at `/login` (email and password). On Cursor’s private host you are already signed in with Cursor.
+Each signed-in account only sees its own data. Open `/login` to create an account or sign in with email and password. Without that session cookie the rest of the app stays closed.
 
 Insights are computed in code, then narrated. If `ANTHROPIC_API_KEY` is unset, narration uses deterministic templates that still pass the number validator.
 

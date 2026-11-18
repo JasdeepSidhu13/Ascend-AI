@@ -1,4 +1,3 @@
-import { getIdentity } from "../../cursor/identity.js";
 import { sql } from "./db";
 import type { Profile, Tone } from "./types";
 import { readJson } from "./db";
@@ -27,32 +26,15 @@ export async function requireViewer(request: Request): Promise<Viewer | Response
 
 export async function resolveViewer(request: Request): Promise<Viewer | null> {
   const sessionUser = await userFromSession(request);
-  if (sessionUser) {
-    return {
-      sub: sessionUser.id,
-      email: sessionUser.email,
-      name: sessionUser.display_name,
-      simulated: false,
-      kind: "person",
-      via: "password",
-    };
-  }
-  const identity = await getIdentity(request);
-  if (identity.verified) {
-    return {
-      sub: identity.sub,
-      email: identity.email,
-      name: identity.name || "",
-      simulated: Boolean(identity.simulated),
-      kind: identity.kind === "key" ? "key" : "person",
-      via: "cursor",
-    };
-  }
-  return null;
-}
-
-export async function optionalViewer(request: Request) {
-  return getIdentity(request);
+  if (!sessionUser) return null;
+  return {
+    sub: sessionUser.id,
+    email: sessionUser.email,
+    name: sessionUser.display_name,
+    simulated: false,
+    kind: "person",
+    via: "password",
+  };
 }
 
 export type AuthVia = "cursor" | "password";
