@@ -28,6 +28,23 @@ export function HomeView() {
         </p>
       </section>
 
+      {(s.nudges ?? []).length > 0 && !s.due && (
+        <p className="card p-4 text-sm">{s.nudges[0].text}</p>
+      )}
+
+      {(s.offTrack ?? []).length > 0 && (
+        <section className="card p-5">
+          <p className="kicker">Re-plan</p>
+          <h2 className="display text-2xl mt-1">Pace slipped on {s.offTrack[0].title}</h2>
+          <p className="text-[var(--muted)] mt-2">
+            Shrink this week&apos;s action instead of repeating a miss. Goals stay; the step gets smaller.
+          </p>
+          <Link href="/goals" className="inline-block mt-3 underline underline-offset-4">
+            Open goals
+          </Link>
+        </section>
+      )}
+
       {s.due && (
         <Link
           href={`/check-in?kind=${s.due.kind}`}

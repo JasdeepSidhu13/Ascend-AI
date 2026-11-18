@@ -104,8 +104,17 @@ export function SettingsView() {
       <section className="card p-5 space-y-3">
         <p className="kicker">Your data</p>
         <p className="text-sm text-[var(--muted)]">One-click export. Full delete. Nothing is sent to an LLM except the small assembled context, and never for training.</p>
+        {state?.quality && (
+          <p className="text-sm text-[var(--muted)]">
+            Helpful rate {state.quality.helpfulRate == null ? "not enough ratings" : `${state.quality.helpfulRate}%`}
+            · action completion {state.quality.actionRate}% · check-ins {state.quality.checkIns}
+          </p>
+        )}
         <a className="block underline underline-offset-4" href="/api/export">
           Download JSON export
+        </a>
+        <a className="block underline underline-offset-4" href="/api/export?format=csv">
+          Download CSV of answers
         </a>
         <button
           className="block text-[var(--warn)] underline underline-offset-4"

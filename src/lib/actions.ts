@@ -1,5 +1,6 @@
 import { asJson, nid, sql } from "./db";
 import { addDays, isoDate, startOfWeek } from "./dates";
+import { actionTypeFromText, recordEffectiveness } from "./effectiveness";
 
 export function shrinkText(text: string): string {
   return text
@@ -36,6 +37,12 @@ export async function followThrough(
     );
     if (done) {
       await sql(`update actions set status = 'done' where id = $1 and user_id = $2`, [a.id, userId]);
+      await recordEffectiveness(
+        userId,
+        actionTypeFromText(a.text),
+        a.expected_metric,
+        "up",
+      );
       continue;
     }
     const skips = await sql<{ c: number }>(
