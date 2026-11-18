@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ascend</title>
+    <link rel="icon" href="favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Fraunces:opsz,wght@9..144,500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f3eee4;
+        --ink: #1a1714;
+        --muted: #5e574e;
+        --accent: #21564a;
+        --card: #fbf7f0;
+        --line: #d6ccbc;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Figtree, system-ui, sans-serif;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+      }
+      main { max-width: 36rem; }
+      .kicker {
+        font-size: 0.7rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      h1 {
+        font-family: Fraunces, Georgia, serif;
+        font-weight: 500;
+        font-size: 3rem;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        margin: 0.6rem 0 1rem;
+      }
+      p { color: var(--muted); line-height: 1.55; }
+      a.btn {
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.85rem 1.4rem;
+        border-radius: 999px;
+        background: var(--ink);
+        color: var(--bg);
+        text-decoration: none;
+      }
+      .card {
+        margin-top: 2rem;
+        padding: 1.1rem 1.2rem;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        font-size: 0.95rem;
+      }
+      code { font-size: 0.85em; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="kicker">Ascend</p>
+      <h1>A quiet place to see your life clearly.</h1>
+      <p>
+        Short check-ins, insights computed from your numbers, goals that shrink when they need to.
+        Each signed-in account only sees its own data.
+      </p>
+      <a class="btn" href="https://ascend.apps.grok.bot/login">Sign in to the live app</a>
+      <div class="card">
+        This GitHub Pages site is a doorway. Login, check-ins and your private data run on the
+        hosted app (or the container <code>ghcr.io/jasdeepsidhu13/ascend</code>).
+      </div>
+    </main>
+  </body>
+</html>
