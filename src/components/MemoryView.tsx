@@ -95,6 +95,7 @@ function FactCard({
       />
       <div className="flex gap-2 mt-2 text-sm">
         <button
+          type="button"
           className="underline underline-offset-4"
           onClick={async () => {
             await api(`/api/memories/${m.id}`, {
@@ -104,16 +105,17 @@ function FactCard({
             onChange();
           }}
         >
-          {m.paused ? "Resume" : "Pause"}
+          {m.paused ? "Resume in insights" : "Pause this fact"}
         </button>
         <button
+          type="button"
           className="underline underline-offset-4"
           onClick={async () => {
             await api(`/api/memories/${m.id}`, { method: "DELETE" });
             onChange();
           }}
         >
-          Delete
+          Delete fact
         </button>
       </div>
     </article>

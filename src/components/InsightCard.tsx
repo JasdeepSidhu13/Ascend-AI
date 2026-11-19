@@ -27,9 +27,11 @@ export function InsightCard({
         </p>
       )}
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button className="text-sm underline underline-offset-4" onClick={onOpen}>
-          See evidence
-        </button>
+        {onOpen && (
+          <button type="button" className="text-sm underline underline-offset-4" onClick={onOpen}>
+            See evidence
+          </button>
+        )}
         <Rating id={insight.id} useful={insight.useful} onRated={onRated} />
       </div>
     </article>
@@ -57,13 +59,17 @@ function Rating({
   return (
     <div className="flex gap-2 ml-auto">
       <button
+        type="button"
+        aria-pressed={sent === true}
         className={`text-sm px-3 py-1.5 rounded-full ${sent === true ? "bg-[var(--accent)] text-[var(--bg)]" : "bg-[var(--bg-2)]"}`}
         onClick={() => rate(true)}
       >
         Helpful
       </button>
       <button
-        className={`text-sm px-3 py-1.5 rounded-full ${sent === false ? "bg-[var(--ink)] text-[var(--bg)]" : "bg-[var(--bg-2)]"}`}
+        type="button"
+        aria-pressed={sent === false}
+        className={`text-sm px-3 py-1.5 rounded-full ${sent === false ? "btn-primary" : "bg-[var(--bg-2)]"}`}
         onClick={() => rate(false)}
       >
         Not helpful
@@ -111,8 +117,8 @@ export function EvidenceSheet({
           ))}
           {insight.evidence.length === 0 && <p>No attached findings.</p>}
         </ul>
-        <button className="mt-6 w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]" onClick={onClose}>
-          Close
+        <button type="button" className="btn-primary mt-6 w-full py-3 rounded-full" onClick={onClose}>
+          Close evidence
         </button>
       </div>
     </div>

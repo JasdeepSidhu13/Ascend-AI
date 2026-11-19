@@ -53,8 +53,8 @@ export function LifeWheel({
             dominantBaseline="middle"
             fill="var(--ink)"
             fontSize="11"
-            className="cursor-pointer"
-            onClick={() => onSelect?.(p.it.key)}
+            className={onSelect ? "cursor-pointer" : undefined}
+            onClick={onSelect ? () => onSelect(p.it.key) : undefined}
           >
             {p.it.name}
           </text>

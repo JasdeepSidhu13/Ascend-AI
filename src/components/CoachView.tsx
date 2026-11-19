@@ -65,10 +65,15 @@ export function CoachView() {
           className="flex-1 h-12 rounded-2xl border hairline px-3 bg-[var(--card)]"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Ask from your data"
+          placeholder="Ask about a metric"
+          aria-label="Message to coach"
         />
-        <button className="px-4 rounded-full bg-[var(--ink)] text-[var(--bg)]" disabled={busy}>
-          Send
+        <button
+          type="submit"
+          className="btn-primary h-12 px-5 rounded-full disabled:opacity-60"
+          disabled={busy || text.trim().length < 3}
+        >
+          {busy ? "Sending…" : "Send"}
         </button>
       </form>
     </main>

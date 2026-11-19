@@ -19,11 +19,12 @@ export function MoreView() {
       )}
       <nav className="grid gap-2">
         {[
+          ["/check-in?kind=pulse", "Daily pulse", "Sixty seconds. Energy, mood, habits"],
           ["/memory", "Memory", "Facts you can edit, pause or forget"],
           ["/coach", "Coach chat", "Questions grounded in your findings"],
           ["/programs", "Programs", "Sleep, career, race packs, plus your questions"],
           ["/journal", "Voice journal", "Speak a reflection"],
-          ["/monthly", "Monthly review", "Wins, drifts, print to PDF"],
+          ["/monthly", "Monthly review", "Wins, drifts, print or save PDF"],
           ["/check-in?kind=audit", "Quarterly audit", "Every area, then reset goals"],
           ["/settings", "Settings", "Tone, reminders, export, delete"],
         ].map(([href, title, blurb]) => (

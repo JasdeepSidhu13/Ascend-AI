@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { Flag, Home, Moon, Sparkles, Sun, BookOpen, MessageCircle, Layers } from "lucide-react";
+import { Flag, Home, Moon, Sparkles, Sun, MessageCircle, Layers, Mic, Ellipsis } from "lucide-react";
 import { LoginView } from "./LoginView";
 import { OnboardingView } from "./OnboardingView";
 
@@ -212,11 +212,12 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
                 <span className="block truncate">{state.profile.email}</span>
               </p>
               <button
-                className="flex items-center gap-2 text-sm text-[var(--muted)]"
+                type="button"
+                className="inline-flex items-center gap-2 text-sm text-[var(--muted)]"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               >
-                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                {theme === "dark" ? "Light" : "Dark"}
+                {theme === "dark" ? <Sun size={16} className="shrink-0" /> : <Moon size={16} className="shrink-0" />}
+                {theme === "dark" ? "Switch to light" : "Switch to dark"}
               </button>
             </div>
           </aside>
@@ -226,7 +227,8 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             <header className="lg:hidden flex items-center justify-between px-5 py-4">
               <Brand />
               <button
-                aria-label="Toggle colour theme"
+                type="button"
+                aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               >
                 {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -254,6 +256,14 @@ function Brand() {
   );
 }
 
+function navActive(path: string, href: string, mobile?: boolean) {
+  if (path === href) return true;
+  if (href !== "/more") return false;
+  const nested = ["/memory", "/monthly", "/settings"];
+  if (mobile) nested.push("/journal", "/coach", "/programs");
+  return nested.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
 function Nav({ mobile }: { mobile?: boolean }) {
   const path = usePathname();
   const items = mobile
@@ -261,20 +271,21 @@ function Nav({ mobile }: { mobile?: boolean }) {
         { href: "/", label: "Home", icon: Home },
         { href: "/insights", label: "Insights", icon: Sparkles },
         { href: "/goals", label: "Goals", icon: Flag },
-        { href: "/more", label: "More", icon: Layers },
+        { href: "/more", label: "More", icon: Ellipsis },
       ]
     : [
         { href: "/", label: "Home", icon: Home },
         { href: "/insights", label: "Insights", icon: Sparkles },
         { href: "/goals", label: "Goals", icon: Flag },
-        { href: "/memory", label: "Memory", icon: BookOpen },
         { href: "/coach", label: "Coach", icon: MessageCircle },
         { href: "/programs", label: "Programs", icon: Layers },
+        { href: "/journal", label: "Journal", icon: Mic },
+        { href: "/more", label: "More", icon: Ellipsis },
       ];
   return (
     <ul className={mobile ? "grid grid-cols-4 py-2" : "space-y-1"}>
       {items.map((it) => {
-        const on = path === it.href;
+        const on = navActive(path, it.href, mobile);
         const Icon = it.icon;
         return (
           <li key={it.href}>
@@ -305,7 +316,8 @@ export function SampleBanner() {
         insights work. Numbers are computed, not invented.
       </p>
       <button
-        className="shrink-0 rounded-full bg-[var(--ink)] text-[var(--bg)] px-4 py-2 text-sm"
+        type="button"
+        className="btn-primary shrink-0 rounded-full px-4 py-2 text-sm"
         onClick={async () => {
           await fetch("/api/sample", {
             method: "POST",

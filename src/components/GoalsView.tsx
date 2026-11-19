@@ -18,7 +18,11 @@ export function GoalsView() {
           <p className="kicker">Goals</p>
           <h1 className="display text-4xl mt-2">Quarter to next step</h1>
         </div>
-        <button className="px-4 py-2 rounded-full bg-[var(--ink)] text-[var(--bg)] text-sm" onClick={() => setOpen(true)}>
+        <button
+          type="button"
+          className="btn-primary px-4 py-2 rounded-full text-sm"
+          onClick={() => setOpen(true)}
+        >
           New goal
         </button>
       </header>
@@ -68,58 +72,93 @@ export function GoalsView() {
 
 function ShareGoal({ goalId }: { goalId: string }) {
   const [url, setUrl] = useState("");
+  const [error, setError] = useState("");
   return (
-    <button
-      className="mt-3 text-sm underline underline-offset-4 text-[var(--muted)]"
-      onClick={async () => {
-        const res = await api<{ token: string }>("/api/share", {
-          method: "POST",
-          body: JSON.stringify({ goalId }),
-        });
-        const next = `${window.location.origin}/share/${res.token}`;
-        setUrl(next);
-        try {
-          await navigator.clipboard.writeText(next);
-        } catch {
-          /* ignore */
-        }
-      }}
-    >
-      {url ? "Share link copied" : "Share this goal with consent"}
-    </button>
+    <div className="mt-3">
+      <button
+        type="button"
+        className="text-sm underline underline-offset-4 text-[var(--muted)]"
+        onClick={async () => {
+          setError("");
+          try {
+            const res = await api<{ token: string }>("/api/share", {
+              method: "POST",
+              body: JSON.stringify({ goalId }),
+            });
+            const next = `${window.location.origin}/share/${res.token}`;
+            setUrl(next);
+            try {
+              await navigator.clipboard.writeText(next);
+            } catch {
+              /* clipboard may be blocked; link still shows */
+            }
+          } catch {
+            setError("Could not create a share link.");
+          }
+        }}
+      >
+        {url ? "Copy share link again" : "Copy share link"}
+      </button>
+      {url && (
+        <p className="text-sm text-[var(--muted)] mt-1 break-all">
+          Copied. {url}
+        </p>
+      )}
+      {error && <p className="text-sm text-[var(--warn)] mt-1">{error}</p>}
+    </div>
   );
 }
 
 function NewAction({ onCreated, goalId }: { onCreated: () => void; goalId?: string }) {
   const [text, setText] = useState("");
   const [trigger, setTrigger] = useState("I close my laptop");
+  const [error, setError] = useState("");
   return (
     <form
       className="mt-4 space-y-2"
       onSubmit={async (e) => {
         e.preventDefault();
         if (!text.trim()) return;
-        await api("/api/actions", {
-          method: "POST",
-          body: JSON.stringify({ text, trigger, goalId }),
-        });
-        setText("");
-        onCreated();
+        setError("");
+        try {
+          await api("/api/actions", {
+            method: "POST",
+            body: JSON.stringify({ text, trigger, goalId }),
+          });
+          setText("");
+          onCreated();
+        } catch (err) {
+          setError(
+            err instanceof Error && err.message === "max_active"
+              ? "You already have three active actions. Mark one done first."
+              : "Could not add that action.",
+          );
+        }
       }}
     >
-      <p className="text-sm text-[var(--muted)]">When [trigger], I will [action]. Max three active.</p>
-      <input
-        className="w-full h-12 rounded-2xl bg-[var(--bg)] border hairline px-3"
-        placeholder="walk for 20 minutes"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-      <input
-        className="w-full h-12 rounded-2xl bg-[var(--bg)] border hairline px-3"
-        value={trigger}
-        onChange={(e) => setTrigger(e.target.value)}
-      />
-      <button className="px-4 py-2 rounded-full border hairline text-sm">Add action</button>
+      <p className="text-sm text-[var(--muted)]">When [trigger], I will [action]. At most three active.</p>
+      <label className="block">
+        <span className="kicker">I will</span>
+        <input
+          className="mt-1 w-full h-12 rounded-2xl bg-[var(--bg)] border hairline px-3"
+          placeholder="walk for 20 minutes"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+      </label>
+      <label className="block">
+        <span className="kicker">When</span>
+        <input
+          className="mt-1 w-full h-12 rounded-2xl bg-[var(--bg)] border hairline px-3"
+          placeholder="I close my laptop"
+          value={trigger}
+          onChange={(e) => setTrigger(e.target.value)}
+        />
+      </label>
+      <button type="submit" className="px-4 py-2 rounded-full border hairline text-sm">
+        Add action
+      </button>
+      {error && <p className="text-sm text-[var(--warn)]">{error}</p>}
     </form>
   );
 }
@@ -155,27 +194,52 @@ function GoalModal({ onClose, onCreated }: { onClose: () => void; onCreated: () 
         }}
       >
         <h2 className="display text-2xl">New goal</h2>
-        <input className="w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <select className="w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={areaKey} onChange={(e) => setAreaKey(e.target.value)}>
-          {AREAS.map((a) => (
-            <option key={a.key} value={a.key}>
-              {a.name}
-            </option>
-          ))}
-        </select>
-        <select className="w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={metricKey} onChange={(e) => setMetricKey(e.target.value)}>
-          {Object.entries(METRIC_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v.label}
-            </option>
-          ))}
-        </select>
+        <label className="block">
+          <span className="kicker">Title</span>
+          <input className="mt-1 w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" placeholder="Run a half marathon" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        </label>
+        <label className="block">
+          <span className="kicker">Area</span>
+          <select className="mt-1 w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={areaKey} onChange={(e) => setAreaKey(e.target.value)}>
+            {AREAS.map((a) => (
+              <option key={a.key} value={a.key}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="kicker">Metric</span>
+          <select className="mt-1 w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={metricKey} onChange={(e) => setMetricKey(e.target.value)}>
+            {Object.entries(METRIC_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="grid grid-cols-2 gap-2">
-          <input className="h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
-          <input className="h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <label className="block">
+            <span className="kicker">Baseline</span>
+            <input className="mt-1 w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={baseline} onChange={(e) => setBaseline(e.target.value)} inputMode="decimal" />
+          </label>
+          <label className="block">
+            <span className="kicker">Target</span>
+            <input className="mt-1 w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={target} onChange={(e) => setTarget(e.target.value)} inputMode="decimal" />
+          </label>
         </div>
-        <input type="date" className="w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
-        <button className="w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]">Save</button>
+        <label className="block">
+          <span className="kicker">Due date</span>
+          <input type="date" className="mt-1 w-full h-12 rounded-2xl border hairline px-3 bg-[var(--bg)]" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
+        </label>
+        <div className="flex gap-2">
+          <button type="button" className="flex-1 py-3 rounded-full border hairline" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn-primary flex-1 py-3 rounded-full">
+            Create goal
+          </button>
+        </div>
       </form>
     </div>
   );
