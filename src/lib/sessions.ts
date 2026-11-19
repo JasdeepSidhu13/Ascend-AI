@@ -1,5 +1,6 @@
-import { CATALOG, SESSION_BUDGET, questionById } from "./catalog";
+import { CATALOG, SESSION_BUDGET, questionById, type CatalogQuestion } from "./catalog";
 import { asJson, nid, readJson, sql } from "./db";
+import { fromBank, loadBank } from "./bank";
 import { followUpsFor, probingQuestion, selectQuestions, type SelectorInput } from "./selector";
 import type { SelectionItem, SessionKind } from "./types";
 import { std } from "./stats";
@@ -7,18 +8,19 @@ import { daysBetween } from "./dates";
 
 export async function startSession(userId: string, kind: SessionKind) {
   const input = await selectorInput(userId, kind);
-  const selection = selectQuestions(input);
+  const bank = await loadBank(userId);
+  const selection = selectQuestions(input, bank);
   const id = nid("s");
   await sql(
     `insert into sessions (id, user_id, kind, selection) values ($1,$2,$3,$4::jsonb)`,
     [id, userId, kind, asJson(selection)],
   );
-  return { id, kind, selection, questions: hydrate(selection), budget: SESSION_BUDGET[kind] };
+  return { id, kind, selection, questions: hydrate(selection, bank), budget: SESSION_BUDGET[kind] };
 }
 
-export function hydrate(selection: SelectionItem[]) {
+export function hydrate(selection: SelectionItem[], bank: CatalogQuestion[] = CATALOG) {
   return selection.map((s) => {
-    const q = questionById(s.questionId) ?? CATALOG[0];
+    const q = fromBank(bank, s.questionId) ?? questionById(s.questionId) ?? CATALOG[0];
     return { ...q, reason: s.reason, followUpOf: s.followUpOf ?? null };
   });
 }
@@ -67,10 +69,23 @@ export async function answerQuestion(input: {
         followUpOf: input.questionId,
       });
     }
+    const selectionNow = readJson<SelectionItem[]>(session[0].selection, []);
+    if ((input.valueText ?? "").length > 24 && !selectionNow.some((s) => s.reason.startsWith("Probing"))) {
+      const probe = await persistProbe(input.userId, session[0].kind, [input.valueText ?? ""]);
+      if (probe) {
+        extra.push({
+          questionId: probe.id,
+          reason: probe.reason,
+          priority: 40,
+          followUpOf: input.questionId,
+        });
+      }
+    }
   }
   const selection = readJson<SelectionItem[]>(session[0].selection, []);
   const existing = new Set(selection.map((s) => s.questionId));
   const added = extra.filter((e) => !existing.has(e.questionId));
+  const bank = await loadBank(input.userId);
   if (added.length) {
     const next = [...selection, ...added];
     await sql(`update sessions set selection = $3::jsonb where id = $1 and user_id = $2`, [
@@ -78,19 +93,21 @@ export async function answerQuestion(input: {
       input.userId,
       asJson(next),
     ]);
-    return { responseId: id, added: hydrate(added), selection: hydrate(next) };
+    return { responseId: id, added: hydrate(added, bank), selection: hydrate(next, bank) };
   }
-  return { responseId: id, added: [], selection: hydrate(selection) };
+  return { responseId: id, added: [], selection: hydrate(selection, bank) };
 }
 
-export async function maybeProbe(userId: string, sessionId: string) {
-  const rows = await sql<{ value_text: string }>(
-    `select value_text from responses where session_id = $1 and user_id = $2 and value_text is not null`,
-    [sessionId, userId],
-  );
-  const probe = probingQuestion(rows.map((r) => r.value_text ?? ""));
+async function persistProbe(userId: string, kind: SessionKind, texts: string[]) {
+  const probe = probingQuestion(texts);
   if (!probe) return null;
-  return { id: "q_generated_probe", prompt: probe.prompt, reason: probe.reason, type: "text" as const };
+  const id = nid("qg");
+  await sql(
+    `insert into questions (id, area_id, dimension, prompt, type, cadence, est_seconds, source, owner_id, kinds_json)
+     values ($1,'area_mind','mind.probe',$2,'text',7,18,'generated',$3,$4::jsonb)`,
+    [id, probe.prompt, userId, JSON.stringify([kind, "weekly"])],
+  );
+  return { id, reason: probe.reason };
 }
 
 export async function selectorInput(userId: string, kind: SessionKind): Promise<SelectorInput> {
@@ -199,6 +216,22 @@ export async function dueSession(userId: string): Promise<{
       kind: "monthly",
       label: "Monthly review",
       detail: "Ten minutes to re-plan the month from the numbers.",
+    };
+  }
+  const lastAudit = await sql<{ started_at: string }>(
+    `select started_at::text as started_at from sessions
+     where user_id = $1 and kind = 'audit' and completed_at is not null
+     order by started_at desc limit 1`,
+    [userId],
+  );
+  const auditAge = lastAudit[0]
+    ? (now.getTime() - new Date(lastAudit[0].started_at).getTime()) / 86400000
+    : 99;
+  if (auditAge > 85) {
+    return {
+      kind: "audit",
+      label: "Quarterly life audit",
+      detail: "Twenty minutes. Every area, then reset what you are aiming at.",
     };
   }
   return {

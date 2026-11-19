@@ -27,6 +27,7 @@ export function GoalsView() {
           <p className="kicker">{g.area}</p>
           <h2 className="display text-2xl mt-1">{g.title}</h2>
           {g.why && <p className="text-[var(--muted)] mt-1">{g.why}</p>}
+          <ShareGoal goalId={g.id} />
           {g.keyResults.map((kr) => (
             <div key={kr.id} className="mt-4">
               <p className="text-sm">
@@ -62,6 +63,30 @@ export function GoalsView() {
       </section>
       {open && <GoalModal onClose={() => setOpen(false)} onCreated={refresh} />}
     </main>
+  );
+}
+
+function ShareGoal({ goalId }: { goalId: string }) {
+  const [url, setUrl] = useState("");
+  return (
+    <button
+      className="mt-3 text-sm underline underline-offset-4 text-[var(--muted)]"
+      onClick={async () => {
+        const res = await api<{ token: string }>("/api/share", {
+          method: "POST",
+          body: JSON.stringify({ goalId }),
+        });
+        const next = `${window.location.origin}/share/${res.token}`;
+        setUrl(next);
+        try {
+          await navigator.clipboard.writeText(next);
+        } catch {
+          /* ignore */
+        }
+      }}
+    >
+      {url ? "Share link copied" : "Share this goal with consent"}
+    </button>
   );
 }
 

@@ -2,6 +2,7 @@ import { METRIC_LABELS } from "./catalog";
 import { nid } from "./db";
 import type { Finding, FindingType, MetricPoint, PaceStatus } from "./types";
 import { mean, pearson, projectLinear, round, slope, std } from "./stats";
+import { pausedStreak } from "./streak";
 
 export type Series = {
   key: string;
@@ -187,7 +188,7 @@ function adherenceFindings(series: Series[], goalMetrics: string[]): Finding[] {
     const pts = daily(s).slice(-14);
     if (pts.length < 7) continue;
     const done = pts.filter((p) => p.value >= 0.5).length;
-    const streak = trailingStreak(pts);
+    const streak = pausedStreak(pts.map((p) => p.value));
     const m = meta(key);
     const rate = done / pts.length;
     out.push(
@@ -336,15 +337,6 @@ function align(a: MetricPoint[], b: MetricPoint[]) {
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
   return s[Math.floor(s.length / 2)] ?? 0;
-}
-
-function trailingStreak(pts: MetricPoint[]): number {
-  let n = 0;
-  for (let i = pts.length - 1; i >= 0; i--) {
-    if (pts[i].value >= 0.5) n += 1;
-    else break;
-  }
-  return n;
 }
 
 function weeksUntil(dueOn: string): number {

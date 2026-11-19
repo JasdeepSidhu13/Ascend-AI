@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { Flag, Home, Moon, Sparkles, Sun, BookOpen } from "lucide-react";
+import { Flag, Home, Moon, Sparkles, Sun, BookOpen, MessageCircle, Layers } from "lucide-react";
 import { LoginView } from "./LoginView";
 import { OnboardingView } from "./OnboardingView";
 
@@ -98,9 +98,12 @@ export type AppState = {
   completion: { done: number; active: number; total: number; rate: number };
   teaching: { wheel: string; trends: string; insights: string };
   checkIns: number;
-  monthly: { wins: string[]; drifts: string[]; plan: string[] };
-  sample: boolean;
-};
+    monthly: { wins: string[]; drifts: string[]; plan: string[] };
+    sample: boolean;
+    nudges: { id: string; kind: string; text: string }[];
+    quality: { helpfulRate: number | null; actionRate: number; checkIns: number };
+    offTrack: { id: string; title: string }[];
+  };
 
 const Ctx = createContext<{
   state: AppState | null;
@@ -253,12 +256,21 @@ function Brand() {
 
 function Nav({ mobile }: { mobile?: boolean }) {
   const path = usePathname();
-  const items = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/insights", label: "Insights", icon: Sparkles },
-    { href: "/goals", label: "Goals", icon: Flag },
-    { href: "/memory", label: "Memory", icon: BookOpen },
-  ];
+  const items = mobile
+    ? [
+        { href: "/", label: "Home", icon: Home },
+        { href: "/insights", label: "Insights", icon: Sparkles },
+        { href: "/goals", label: "Goals", icon: Flag },
+        { href: "/more", label: "More", icon: Layers },
+      ]
+    : [
+        { href: "/", label: "Home", icon: Home },
+        { href: "/insights", label: "Insights", icon: Sparkles },
+        { href: "/goals", label: "Goals", icon: Flag },
+        { href: "/memory", label: "Memory", icon: BookOpen },
+        { href: "/coach", label: "Coach", icon: MessageCircle },
+        { href: "/programs", label: "Programs", icon: Layers },
+      ];
   return (
     <ul className={mobile ? "grid grid-cols-4 py-2" : "space-y-1"}>
       {items.map((it) => {

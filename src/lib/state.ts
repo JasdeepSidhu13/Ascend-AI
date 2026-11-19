@@ -4,6 +4,7 @@ import { emptyTeaching } from "./engine";
 import { paceStatus } from "./findings";
 import { projectLinear, round, slope } from "./stats";
 import { dueSession } from "./sessions";
+import { dueNudges } from "./nudges";
 import type { Finding, Profile } from "./types";
 import { addDays, isoDate, startOfWeek } from "./dates";
 import { areaName } from "./memory";
@@ -81,6 +82,10 @@ export async function dashboardState(profile: Profile) {
   const due = await dueSession(userId);
   const completion = actionCompletion(actions.map((a) => a.status));
   const monthly = await monthlyReport(userId, wheel, goals, insights.map((i) => i.title));
+  const nudges = await dueNudges(profile, due);
+  const helpful = feedback.filter((f) => f.useful).length;
+  const ratedN = feedback.length;
+  const offTrack = goals.filter((g) => g.keyResults.some((kr) => kr.status === "off_track"));
 
   return {
     profile,
@@ -107,6 +112,13 @@ export async function dashboardState(profile: Profile) {
     checkIns,
     monthly,
     sample: profile.sampleData,
+    nudges,
+    quality: {
+      helpfulRate: ratedN ? Math.round((helpful / ratedN) * 100) : null,
+      actionRate: Math.round(completion.rate * 100),
+      checkIns,
+    },
+    offTrack: offTrack.map((g) => ({ id: g.id, title: g.title })),
   };
 }
 

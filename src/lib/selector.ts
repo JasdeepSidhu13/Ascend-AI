@@ -1,4 +1,4 @@
-import { CATALOG, FOLLOW_UPS, SESSION_BUDGET, questionById } from "./catalog";
+import { CATALOG, FOLLOW_UPS, SESSION_BUDGET, questionById, type CatalogQuestion } from "./catalog";
 import type { SelectionItem, SessionKind } from "./types";
 import { daysBetween, parseDate } from "./dates";
 
@@ -17,8 +17,12 @@ export type SelectorInput = {
 
 const W = { s: 1, g: 1.2, d: 1, u: 0.8, f: 0.7 };
 
-export function priority(qId: string, input: SelectorInput): { score: number; reason: string } {
-  const q = questionById(qId);
+export function priority(
+  qId: string,
+  input: SelectorInput,
+  bank: CatalogQuestion[] = CATALOG,
+): { score: number; reason: string } {
+  const q = bank.find((x) => x.id === qId) ?? questionById(qId);
   if (!q) return { score: -999, reason: "" };
   const last = input.lastAsked[q.id];
   const days = last ? Math.max(0, daysBetween(parseDate(last), input.now)) : q.cadence * 3;
@@ -61,14 +65,14 @@ const FOLLOW_UP_ONLY = new Set([
   "q_action_followup",
 ]);
 
-export function selectQuestions(input: SelectorInput): SelectionItem[] {
+export function selectQuestions(input: SelectorInput, bank: CatalogQuestion[] = CATALOG): SelectionItem[] {
   const budget = SESSION_BUDGET[input.kind];
-  const eligible = CATALOG.filter(
+  const eligible = bank.filter(
     (q) => q.kinds.includes(input.kind) && !FOLLOW_UP_ONLY.has(q.id),
   );
   const ranked = eligible
     .map((q) => {
-      const p = priority(q.id, input);
+      const p = priority(q.id, input, bank);
       return { q, ...p };
     })
     .sort((a, b) => b.score - a.score);
