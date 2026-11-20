@@ -69,8 +69,10 @@ export function OnboardingView() {
                 const on = values.includes(v);
                 return (
                   <button
+                    type="button"
                     key={v}
                     className={`px-3 py-2 rounded-full border hairline ${on ? "bg-[var(--accent)] text-[var(--bg)]" : "bg-[var(--card)]"}`}
+                    aria-pressed={on}
                     onClick={() =>
                       setValues((cur) =>
                         on ? cur.filter((x) => x !== v) : cur.length < 3 ? [...cur, v] : cur,
@@ -88,8 +90,10 @@ export function OnboardingView() {
             <div className="grid grid-cols-2 gap-3 mt-3">
               {(["gentle", "direct"] as const).map((t) => (
                 <button
+                  type="button"
                   key={t}
                   className={`p-4 rounded-2xl border hairline text-left ${tone === t ? "bg-[var(--accent-soft)]" : "bg-[var(--card)]"}`}
+                  aria-pressed={tone === t}
                   onClick={() => setTone(t)}
                 >
                   <span className="capitalize font-medium">{t}</span>
@@ -152,12 +156,13 @@ export function OnboardingView() {
       )}
       <div className="mt-10 flex gap-3">
         {step > 0 && (
-          <button className="px-5 py-3 rounded-full border hairline" onClick={() => setStep(step - 1)}>
+          <button type="button" className="px-5 py-3 rounded-full border hairline" onClick={() => setStep(step - 1)}>
             Back
           </button>
         )}
         <button
-          className="flex-1 py-3 rounded-full bg-[var(--ink)] text-[var(--bg)] disabled:opacity-60"
+          type="button"
+          className="btn-primary flex-1 py-3 rounded-full disabled:opacity-60"
           disabled={busy}
           onClick={() => (step < 3 ? setStep(step + 1) : finish())}
         >

@@ -11,6 +11,7 @@ export function JournalView() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api<{ entries: Entry[] }>("/api/journal")
@@ -36,10 +37,16 @@ export function JournalView() {
   }
 
   async function save() {
-    await api("/api/journal", { method: "POST", body: JSON.stringify({ text }) });
-    const next = await api<{ entries: Entry[] }>("/api/journal");
-    setEntries(next.entries ?? []);
-    setText("");
+    if (text.trim().length < 8 || saving) return;
+    setSaving(true);
+    try {
+      await api("/api/journal", { method: "POST", body: JSON.stringify({ text }) });
+      const next = await api<{ entries: Entry[] }>("/api/journal");
+      setEntries(next.entries ?? []);
+      setText("");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -56,19 +63,25 @@ export function JournalView() {
         className="w-full min-h-32 rounded-2xl border hairline p-3 bg-[var(--card)]"
         value={text}
         onChange={(e) => setText(e.target.value)}
+        placeholder="What happened, in a few sentences"
+        aria-label="Journal reflection"
       />
       <div className="flex gap-2">
-        <button className="px-4 py-2 rounded-full border hairline" onClick={listen}>
-          {listening ? "Listening…" : "Speak"}
+        <button type="button" className="px-4 py-2 rounded-full border hairline" onClick={listen}>
+          {listening ? "Listening…" : "Start speaking"}
         </button>
         <button
-          className="px-4 py-2 rounded-full bg-[var(--ink)] text-[var(--bg)]"
+          type="button"
+          className="btn-primary px-4 py-2 rounded-full disabled:opacity-60"
           onClick={save}
-          disabled={text.trim().length < 8}
+          disabled={text.trim().length < 8 || saving}
         >
-          Save
+          {saving ? "Saving…" : "Save reflection"}
         </button>
       </div>
+      {text.trim().length > 0 && text.trim().length < 8 && (
+        <p className="text-sm text-[var(--muted)]">A short sentence is enough — at least 8 characters.</p>
+      )}
       <ul className="space-y-3">
         {entries.map((e) => (
           <li key={e.id} className="card p-4">

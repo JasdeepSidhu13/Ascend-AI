@@ -13,24 +13,39 @@ export function ProgramsView() {
   const [prompt, setPrompt] = useState("");
   const [metricKey, setMetricKey] = useState("health.sleep_hours");
   const [msg, setMsg] = useState("");
+  const [added, setAdded] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     api<Pack[]>("/api/programs").then(setPacks).catch(() => setPacks([]));
   }, []);
 
   async function apply(programId: string) {
-    await api("/api/programs", { method: "POST", body: JSON.stringify({ programId }) });
-    await refresh();
-    setMsg("Added to your goals. At most three actions stay active.");
+    setBusyId(programId);
+    setMsg("");
+    try {
+      await api("/api/programs", { method: "POST", body: JSON.stringify({ programId }) });
+      await refresh();
+      setAdded(programId);
+      setMsg("Added to your goals. At most three actions stay active.");
+    } catch {
+      setMsg("Could not add that program. Try again.");
+    }
+    setBusyId(null);
   }
 
   async function addQuestion() {
-    await api("/api/questions", {
-      method: "POST",
-      body: JSON.stringify({ prompt, metricKey, type: "number", areaKey: METRIC_LABELS[metricKey]?.area }),
-    });
-    setPrompt("");
-    setMsg("That question is in your personal bank for pulses and weekly reflections.");
+    if (prompt.length < 8) return;
+    try {
+      await api("/api/questions", {
+        method: "POST",
+        body: JSON.stringify({ prompt, metricKey, type: "number", areaKey: METRIC_LABELS[metricKey]?.area }),
+      });
+      setPrompt("");
+      setMsg("That question is in your personal bank for pulses and weekly reflections.");
+    } catch {
+      setMsg("Could not save that question. Try again.");
+    }
   }
 
   return (
@@ -48,10 +63,12 @@ export function ProgramsView() {
             <h2 className="display text-2xl mt-1">{p.title}</h2>
             <p className="text-[var(--muted)] mt-2">{p.blurb}</p>
             <button
-              className="mt-4 px-4 py-2 rounded-full bg-[var(--ink)] text-[var(--bg)] text-sm"
+              type="button"
+              className="btn-primary mt-4 px-4 py-2 rounded-full text-sm disabled:opacity-60"
               onClick={() => apply(p.id)}
+              disabled={busyId === p.id || added === p.id}
             >
-              Add this program
+              {busyId === p.id ? "Adding…" : added === p.id ? "Added to goals" : "Add this program"}
             </button>
           </article>
         ))}
@@ -77,8 +94,13 @@ export function ProgramsView() {
             </option>
           ))}
         </select>
-        <button className="px-4 py-2 rounded-full border hairline" onClick={addQuestion} disabled={prompt.length < 8}>
-          Save to my bank
+        <button
+          type="button"
+          className="px-4 py-2 rounded-full border hairline disabled:opacity-60"
+          onClick={addQuestion}
+          disabled={prompt.length < 8}
+        >
+          Save question to my bank
         </button>
         <p className="text-sm text-[var(--muted)]">{AREAS.length} areas. Generated probes that earn two useful answers join this bank too.</p>
       </section>

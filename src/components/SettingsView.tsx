@@ -49,8 +49,10 @@ export function SettingsView() {
         <div className="grid grid-cols-2 gap-2 mt-2">
           {(["gentle", "direct"] as const).map((t) => (
             <button
+              type="button"
               key={t}
-              className={`py-3 rounded-2xl border hairline ${tone === t ? "bg-[var(--accent-soft)]" : "bg-[var(--card)]"}`}
+              className={`py-3 rounded-2xl border hairline capitalize ${tone === t ? "bg-[var(--accent-soft)]" : "bg-[var(--card)]"}`}
+              aria-pressed={tone === t}
               onClick={() => setTone(t)}
             >
               {t}
@@ -69,8 +71,10 @@ export function SettingsView() {
             const on = values.includes(v);
             return (
               <button
+                type="button"
                 key={v}
                 className={`px-3 py-1.5 rounded-full border hairline text-sm ${on ? "bg-[var(--accent)] text-[var(--bg)]" : ""}`}
+                aria-pressed={on}
                 onClick={() => setValues((cur) => (on ? cur.filter((x) => x !== v) : [...cur, v].slice(0, 5)))}
               >
                 {v}
@@ -83,11 +87,12 @@ export function SettingsView() {
         <span className="kicker">Constraints</span>
         <textarea className="mt-2 w-full rounded-2xl border hairline p-3 bg-[var(--card)]" rows={3} value={constraints} onChange={(e) => setConstraints(e.target.value)} />
       </label>
-      <button className="w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]" onClick={save}>
-        Save
+      <button type="button" className="btn-primary w-full py-3 rounded-full" onClick={save}>
+        Save settings
       </button>
       {msg && <p className="text-sm text-[var(--muted)]">{msg}</p>}
       <button
+        type="button"
         className="w-full py-3 rounded-full border hairline"
         onClick={async () => {
           await fetch("/api/auth/logout", { method: "POST" });
@@ -110,13 +115,16 @@ export function SettingsView() {
             · action completion {state.quality.actionRate}% · check-ins {state.quality.checkIns}
           </p>
         )}
-        <a className="block underline underline-offset-4" href="/api/export">
-          Download JSON export
-        </a>
-        <a className="block underline underline-offset-4" href="/api/export?format=csv">
-          Download CSV of answers
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <a className="inline-flex px-4 py-2 rounded-full border hairline text-sm" href="/api/export">
+            Download JSON export
+          </a>
+          <a className="inline-flex px-4 py-2 rounded-full border hairline text-sm" href="/api/export?format=csv">
+            Download CSV of answers
+          </a>
+        </div>
         <button
+          type="button"
           className="block text-[var(--warn)] underline underline-offset-4"
           onClick={async () => {
             if (!confirm("Delete all of your Ascend data? This cannot be undone.")) return;
@@ -128,6 +136,7 @@ export function SettingsView() {
         </button>
         {state?.sample && (
           <button
+            type="button"
             className="block underline underline-offset-4"
             onClick={async () => {
               await api("/api/sample", { method: "POST", body: JSON.stringify({ action: "clear" }) });
@@ -139,6 +148,7 @@ export function SettingsView() {
         )}
         {!state?.sample && (
           <button
+            type="button"
             className="block underline underline-offset-4"
             onClick={async () => {
               await api("/api/sample", { method: "POST", body: JSON.stringify({ action: "load" }) });

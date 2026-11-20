@@ -85,13 +85,15 @@ export function LoginView() {
           </label>
           {error && <p className="text-sm text-[var(--warn)]">{error}</p>}
           <button
-            className="w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)] disabled:opacity-60"
+            type="submit"
+            className="btn-primary w-full py-3 rounded-full disabled:opacity-60"
             disabled={busy}
           >
             {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
         <button
+          type="button"
           className="mt-6 text-sm underline underline-offset-4 text-[var(--muted)]"
           onClick={() => {
             setMode(mode === "login" ? "signup" : "login");

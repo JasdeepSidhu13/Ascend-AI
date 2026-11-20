@@ -16,8 +16,12 @@ export function MonthlyView() {
             {new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
           </h1>
         </div>
-        <button className="px-4 py-2 rounded-full border hairline text-sm print:hidden" onClick={() => window.print()}>
-          Export PDF
+        <button
+          type="button"
+          className="px-4 py-2 rounded-full border hairline text-sm print:hidden"
+          onClick={() => window.print()}
+        >
+          Print or save PDF
         </button>
       </header>
       <section className="card p-5">

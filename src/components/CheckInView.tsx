@@ -119,8 +119,17 @@ export function CheckInView() {
 
   if (error) {
     return (
-      <main className="min-h-screen grid place-items-center p-6">
-        <p>{error}</p>
+      <main className="min-h-screen grid place-items-center p-6 text-center">
+        <div>
+          <p>{error}</p>
+          <button
+            type="button"
+            className="mt-4 px-4 py-2 rounded-full border hairline"
+            onClick={() => window.location.reload()}
+          >
+            Try again
+          </button>
+        </div>
       </main>
     );
   }
@@ -140,7 +149,7 @@ export function CheckInView() {
             </li>
           ))}
         </ul>
-        <button className="mt-10 underline" onClick={() => router.push("/")}>
+        <button type="button" className="mt-10 underline" onClick={() => router.push("/")}>
           Back home
         </button>
       </main>
@@ -170,8 +179,8 @@ export function CheckInView() {
   return (
     <main className="min-h-screen max-w-lg mx-auto px-5 py-6 flex flex-col">
       <div className="flex items-center justify-between">
-        <button className="text-sm text-[var(--muted)]" onClick={() => router.push("/")}>
-          Close
+        <button type="button" className="text-sm text-[var(--muted)]" onClick={() => router.push("/")}>
+          Exit check-in
         </button>
         <p className="kicker">
           {index + 1} of {questions.length} · ~{Math.max(1, Math.round(remaining / 60))} min
@@ -193,10 +202,11 @@ export function CheckInView() {
         />
       </div>
       <button
+        type="button"
         className="text-sm text-[var(--muted)] py-4"
         onClick={() => submit({}, true)}
       >
-        Skip this one
+        Skip this question
       </button>
     </main>
   );
@@ -222,6 +232,7 @@ function Answer({
       <div className="grid grid-cols-5 gap-2">
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
           <button
+            type="button"
             key={n}
             className="h-14 rounded-2xl bg-[var(--card)] border hairline tabular text-lg"
             onClick={() => onSubmit({ num: n, text: String(n) })}
@@ -241,6 +252,7 @@ function Answer({
       <div className="grid grid-cols-2 gap-3">
         {["Yes", "No"].map((label) => (
           <button
+            type="button"
             key={label}
             className="h-24 rounded-3xl bg-[var(--card)] border hairline text-xl"
             onClick={() => onSubmit({ text: label, num: label === "Yes" ? 1 : 0 })}
@@ -256,6 +268,7 @@ function Answer({
       <div className="space-y-2">
         {q.options.map((opt) => (
           <button
+            type="button"
             key={opt}
             className="w-full text-left px-4 py-4 rounded-2xl bg-[var(--card)] border hairline"
             onClick={() => onSubmit({ text: opt })}
@@ -274,8 +287,10 @@ function Answer({
             const on = picked.includes(opt);
             return (
               <button
+                type="button"
                 key={opt}
                 className={`px-4 py-2 rounded-full border hairline ${on ? "bg-[var(--accent)] text-[var(--bg)]" : "bg-[var(--card)]"}`}
+                aria-pressed={on}
                 onClick={() =>
                   setPicked((p) => (p.includes(opt) ? p.filter((x) => x !== opt) : [...p, opt]))
                 }
@@ -286,7 +301,8 @@ function Answer({
           })}
         </div>
         <button
-          className="mt-6 w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]"
+          type="button"
+          className="btn-primary mt-6 w-full py-3 rounded-full"
           onClick={() => onSubmit({ json: picked, text: picked.join(", ") })}
         >
           Continue
@@ -309,7 +325,7 @@ function Answer({
           onChange={(e) => setText(e.target.value)}
           className="w-full h-16 rounded-2xl bg-[var(--card)] border hairline px-4 text-xl"
         />
-        <button className="w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]">Continue</button>
+        <button type="submit" className="btn-primary w-full py-3 rounded-full">Continue</button>
       </form>
     );
   }
@@ -334,7 +350,7 @@ function Answer({
           />
           <span className="text-[var(--muted)] pb-4">{q.unit}</span>
         </div>
-        <button className="w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]">Continue</button>
+        <button type="submit" className="btn-primary w-full py-3 rounded-full">Continue</button>
       </form>
     );
   }
@@ -353,7 +369,7 @@ function Answer({
         className="w-full rounded-2xl bg-[var(--card)] border hairline p-4"
         placeholder="A sentence is enough"
       />
-      <button className="w-full py-3 rounded-full bg-[var(--ink)] text-[var(--bg)]">Continue</button>
+      <button type="submit" className="btn-primary w-full py-3 rounded-full">Continue</button>
     </form>
   );
 }

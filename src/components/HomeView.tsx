@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, Check, X } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { SampleBanner, useApp } from "./AppFrame";
 import { Heatmap, LifeWheel, PaceBar, Sparkline } from "./charts";
 import { EvidenceSheet, InsightCard } from "./InsightCard";
@@ -45,7 +45,7 @@ export function HomeView() {
         </section>
       )}
 
-      {s.due && (
+      {s.due ? (
         <Link
           href={`/check-in?kind=${s.due.kind}`}
           className="card p-5 sm:p-6 flex items-center justify-between gap-4 group"
@@ -55,9 +55,13 @@ export function HomeView() {
             <h2 className="display text-3xl mt-2">{s.due.label}</h2>
             <p className="text-[var(--muted)] mt-1">{s.due.detail}</p>
           </div>
-          <span className="h-12 w-12 rounded-full bg-[var(--accent)] text-[var(--bg)] grid place-items-center group-hover:translate-x-0.5 transition">
+          <span className="h-12 w-12 rounded-full bg-[var(--accent)] text-white grid place-items-center group-hover:translate-x-0.5 transition" aria-hidden>
             <ArrowRight size={20} />
           </span>
+        </Link>
+      ) : (
+        <Link href="/check-in?kind=pulse" className="text-sm underline underline-offset-4">
+          Start a daily pulse
         </Link>
       )}
 
@@ -70,10 +74,10 @@ export function HomeView() {
                 <p>{m.text}</p>
                 <p className="text-sm text-[var(--muted)] mt-1">{m.area} · health, money and relationship facts wait for a tap</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 shrink-0">
                 <button
-                  aria-label="Remember"
-                  className="h-10 w-10 rounded-full bg-[var(--accent-soft)] grid place-items-center"
+                  type="button"
+                  className="text-sm px-3 py-1.5 rounded-full bg-[var(--accent-soft)]"
                   onClick={async () => {
                     await api(`/api/memories/${m.id}`, {
                       method: "PATCH",
@@ -82,17 +86,17 @@ export function HomeView() {
                     refresh();
                   }}
                 >
-                  <Check size={16} />
+                  Keep
                 </button>
                 <button
-                  aria-label="Forget"
-                  className="h-10 w-10 rounded-full bg-[var(--bg-2)] grid place-items-center"
+                  type="button"
+                  className="text-sm px-3 py-1.5 rounded-full bg-[var(--bg-2)]"
                   onClick={async () => {
                     await api(`/api/memories/${m.id}`, { method: "DELETE" });
                     refresh();
                   }}
                 >
-                  <X size={16} />
+                  Forget
                 </button>
               </div>
             </div>
@@ -142,6 +146,7 @@ export function HomeView() {
                 <p>{a.text}</p>
                 <div className="flex gap-2 mt-2">
                   <button
+                    type="button"
                     className="text-sm px-3 py-1.5 rounded-full bg-[var(--accent-soft)]"
                     onClick={async () => {
                       await api(`/api/actions/${a.id}`, {
@@ -151,9 +156,10 @@ export function HomeView() {
                       refresh();
                     }}
                   >
-                    Done
+                    Mark done
                   </button>
                   <button
+                    type="button"
                     className="text-sm px-3 py-1.5 rounded-full bg-[var(--bg-2)]"
                     onClick={async () => {
                       await api(`/api/actions/${a.id}`, {
@@ -163,7 +169,7 @@ export function HomeView() {
                       refresh();
                     }}
                   >
-                    Not this week
+                    Skip this week
                   </button>
                 </div>
               </li>
@@ -191,10 +197,8 @@ export function HomeView() {
                 {g.keyResults.map((kr) => (
                   <div key={kr.id} className="mt-2">
                     <p className="text-sm text-[var(--muted)]">
-                      <button className="underline-offset-2 hover:underline tabular" onClick={() => s.leading && setEvidence(s.leading)}>
-                        {kr.current} {kr.unit}
-                      </button>{" "}
-                      now · projected {kr.projected} · target {kr.target} by {kr.dueOn}
+                      <span className="tabular">{kr.current} {kr.unit}</span>
+                      {" "}now · projected {kr.projected} · target {kr.target} by {kr.dueOn}
                     </p>
                     <PaceBar
                       baseline={kr.baseline}
