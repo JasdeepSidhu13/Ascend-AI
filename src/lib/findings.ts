@@ -48,6 +48,7 @@ export function computeFindings(input: {
 }): Finding[] {
   const findings: Finding[] = [];
   findings.push(...trendFindings(input.series, input.goalMetrics));
+  findings.push(...earlyDailyFindings(input.series, input.goalMetrics, input.paces));
   findings.push(...driverFindings(input.series, input.goalMetrics));
   findings.push(...adherenceFindings(input.series, input.goalMetrics));
   findings.push(...anomalyFindings(input.series, input.goalMetrics));
@@ -113,6 +114,51 @@ function trendFindings(series: Series[], goalMetrics: string[]): Finding[] {
         summary: `${m.label} ${dir} ${round(Math.abs(delta), 1)} ${m.unit} vs prior 4 weeks`.trim(),
       }),
     );
+  }
+  return out;
+}
+
+/** Cautious trend from 3–5 daily points so Home is not empty for a week. */
+export function earlyDailyFindings(
+  series: Series[],
+  goalMetrics: string[],
+  paces: GoalPaceInput[] = [],
+): Finding[] {
+  const out: Finding[] = [];
+  for (const s of series) {
+    const pts = daily(s);
+    if (pts.length < 3 || pts.length >= 6) continue;
+    if (weekly(s).length >= 6) continue;
+    const vals = pts.map((p) => p.value);
+    const recent = vals.slice(-Math.min(5, vals.length));
+    const avg = mean(recent);
+    const first = mean(recent.slice(0, Math.max(1, Math.floor(recent.length / 2))));
+    const last = mean(recent.slice(Math.floor(recent.length / 2)));
+    const delta = last - first;
+    const target = paces.find((p) => p.metricKey === s.key)?.target;
+    const m = meta(s.key);
+    const dir = delta >= 0 ? "up" : "down";
+    out.push(
+      make({
+        type: "trend",
+        metricKeys: [s.key],
+        stats: {
+          recent_mean: round(avg, 2),
+          prior_mean: round(first, 2),
+          delta: round(delta, 2),
+          n: recent.length,
+          early: 1,
+          firm_at: 6,
+          ...(target != null ? { target } : {}),
+        },
+        evidenceIds: pts.slice(-recent.length).map((p) => `mp:${s.key}:${p.periodStart}`),
+        score: 0.55 * (goalMetrics.includes(s.key) ? 1.2 : 0.8),
+        summary: target != null
+          ? `${m.label} averaged ${round(avg, 1)} ${m.unit} over ${recent.length} days (target ${target} ${m.unit})`
+          : `${m.label} averaged ${round(avg, 1)} ${m.unit} over ${recent.length} days`,
+      }),
+    );
+    void dir;
   }
   return out;
 }

@@ -28,6 +28,8 @@ export function HomeView() {
         </p>
       </section>
 
+      <ProgressMeter progress={s.progress} hasInsight={Boolean(s.leading)} />
+
       {(s.nudges ?? []).length > 0 && !s.due && (
         <p className="card p-4 text-sm">{s.nudges[0].text}</p>
       )}
@@ -251,5 +253,34 @@ export function HomeView() {
 
       {evidence && <EvidenceSheet insight={evidence} onClose={() => setEvidence(null)} />}
     </main>
+  );
+}
+
+function ProgressMeter({
+  progress,
+  hasInsight,
+}: {
+  progress?: { mornings: number; earlyAt: number; firmAt: number };
+  hasInsight: boolean;
+}) {
+  const mornings = progress?.mornings ?? 0;
+  const earlyAt = progress?.earlyAt ?? 3;
+  const firmAt = progress?.firmAt ?? 6;
+  if (mornings >= firmAt && hasInsight) return null;
+  const pct = Math.min(100, Math.round((mornings / firmAt) * 100));
+  const label =
+    mornings < earlyAt
+      ? `${mornings} of ${earlyAt} mornings toward a first cited sentence.`
+      : mornings < firmAt
+        ? `A cautious sentence can appear now. ${mornings} of ${firmAt} toward a firmer trend.`
+        : `${mornings} mornings logged. Insights stay on Home.`;
+  return (
+    <section className="card p-5">
+      <p className="kicker">Time to first insight</p>
+      <p className="mt-2">{label}</p>
+      <div className="mt-3 h-2 rounded-full bg-[var(--bg-2)]" aria-hidden>
+        <div className="h-2 rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+      </div>
+    </section>
   );
 }

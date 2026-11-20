@@ -39,6 +39,8 @@ export type AppState = {
     pulseHour: number;
     quietStart: number;
     quietEnd: number;
+    emailPulse: boolean;
+    tz: string;
     onboardingCompletedAt: string | null;
     sampleData: boolean;
     simulated: boolean;
@@ -98,12 +100,13 @@ export type AppState = {
   completion: { done: number; active: number; total: number; rate: number };
   teaching: { wheel: string; trends: string; insights: string };
   checkIns: number;
-    monthly: { wins: string[]; drifts: string[]; plan: string[] };
-    sample: boolean;
-    nudges: { id: string; kind: string; text: string }[];
-    quality: { helpfulRate: number | null; actionRate: number; checkIns: number };
-    offTrack: { id: string; title: string }[];
-  };
+  monthly: { wins: string[]; drifts: string[]; plan: string[] };
+  sample: boolean;
+  nudges: { id: string; kind: string; text: string }[];
+  quality: { helpfulRate: number | null; actionRate: number; checkIns: number };
+  offTrack: { id: string; title: string }[];
+  progress: { mornings: number; earlyAt: number; firmAt: number };
+};
 
 const Ctx = createContext<{
   state: AppState | null;

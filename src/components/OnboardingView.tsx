@@ -1,22 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { AREAS, VALUE_OPTIONS } from "@/lib/catalog";
+import { useMemo, useState } from "react";
 import { api } from "@/lib/client";
 import { useApp } from "./AppFrame";
 
+function detectTz() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
 export function OnboardingView() {
   const { state, refresh } = useApp();
-  const [step, setStep] = useState(0);
   const [name, setName] = useState(state?.profile.displayName || "");
-  const [values, setValues] = useState<string[]>(state?.profile.values?.slice(0, 3) ?? []);
-  const [tone, setTone] = useState<"gentle" | "direct">(state?.profile.tone ?? "gentle");
-  const [wheel, setWheel] = useState<Record<string, number>>(
-    Object.fromEntries(AREAS.map((a) => [a.key, 6])),
-  );
-  const [goal, setGoal] = useState("Run a half marathon by April");
-  const [pulseHour, setPulseHour] = useState(7);
+  const [sleepTarget, setSleepTarget] = useState(7.5);
+  const [pulseHour, setPulseHour] = useState(state?.profile.pulseHour || 7);
+  const [emailPulse, setEmailPulse] = useState(state?.profile.emailPulse !== false);
   const [busy, setBusy] = useState(false);
+  const tz = useMemo(detectTz, []);
 
   async function finish() {
     setBusy(true);
@@ -24,24 +27,10 @@ export function OnboardingView() {
       method: "POST",
       body: JSON.stringify({
         displayName: name || "Friend",
-        values,
-        tone,
+        sleepTarget,
         pulseHour,
-        wheel,
-        goals: goal.trim()
-          ? [
-              {
-                title: goal.trim(),
-                areaKey: "health",
-                why: "A body that keeps up",
-                metricKey: "health.run_km",
-                baseline: 15,
-                target: 40,
-                unit: "km",
-                dueOn: "2027-03-01",
-              },
-            ]
-          : [],
+        emailPulse,
+        tz,
       }),
     });
     await refresh();
@@ -50,125 +39,68 @@ export function OnboardingView() {
 
   return (
     <main className="min-h-screen max-w-lg mx-auto px-5 py-10">
-      <p className="kicker">Onboarding · {step + 1} of 4</p>
-      {step === 0 && (
-        <section className="mt-6 space-y-6">
-          <h1 className="display text-4xl">A quiet place to see your life clearly.</h1>
-          <label className="block">
-            <span className="kicker">What should we call you?</span>
-            <input
-              className="mt-2 w-full h-14 rounded-2xl bg-[var(--card)] border hairline px-4"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-          <div>
-            <p className="kicker">Pick up to three values</p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {VALUE_OPTIONS.map((v) => {
-                const on = values.includes(v);
-                return (
-                  <button
-                    type="button"
-                    key={v}
-                    className={`px-3 py-2 rounded-full border hairline ${on ? "bg-[var(--accent)] text-[var(--bg)]" : "bg-[var(--card)]"}`}
-                    aria-pressed={on}
-                    onClick={() =>
-                      setValues((cur) =>
-                        on ? cur.filter((x) => x !== v) : cur.length < 3 ? [...cur, v] : cur,
-                      )
-                    }
-                  >
-                    {v}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <p className="kicker">Voice</p>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              {(["gentle", "direct"] as const).map((t) => (
-                <button
-                  type="button"
-                  key={t}
-                  className={`p-4 rounded-2xl border hairline text-left ${tone === t ? "bg-[var(--accent-soft)]" : "bg-[var(--card)]"}`}
-                  aria-pressed={tone === t}
-                  onClick={() => setTone(t)}
-                >
-                  <span className="capitalize font-medium">{t}</span>
-                  <span className="block text-sm text-[var(--muted)] mt-1">
-                    {t === "gentle" ? "You might try…" : "Do this next."}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-      {step === 1 && (
-        <section className="mt-6 space-y-5">
-          <h1 className="display text-4xl">A first life wheel</h1>
-          <p className="text-[var(--muted)]">Honest, not impressive. This is the baseline trends grow from.</p>
-          {AREAS.map((a) => (
-            <label key={a.key} className="block">
-              <span className="flex justify-between text-sm">
-                {a.name}
-                <span className="tabular">{wheel[a.key]}</span>
-              </span>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                value={wheel[a.key]}
-                onChange={(e) => setWheel({ ...wheel, [a.key]: Number(e.target.value) })}
-                className="w-full mt-2"
-              />
-            </label>
-          ))}
-        </section>
-      )}
-      {step === 2 && (
-        <section className="mt-6 space-y-4">
-          <h1 className="display text-4xl">One goal for the quarter</h1>
-          <p className="text-[var(--muted)]">Optional. You can add more later. Sample: a half marathon by April.</p>
+      <p className="kicker">First run · about a minute</p>
+      <section className="mt-6 space-y-6">
+        <h1 className="display text-4xl">Name, a sleep floor, and a pulse hour.</h1>
+        <p className="text-[var(--muted)]">
+          Home shows one cited sentence. Three mornings is enough for a cautious first one.
+        </p>
+        <label className="block">
+          <span className="kicker">What should we call you?</span>
           <input
-            className="w-full h-14 rounded-2xl bg-[var(--card)] border hairline px-4"
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
+            className="mt-2 w-full h-14 rounded-2xl bg-[var(--card)] border hairline px-4"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="given-name"
           />
-        </section>
-      )}
-      {step === 3 && (
-        <section className="mt-6 space-y-4">
-          <h1 className="display text-4xl">When should the daily pulse arrive?</h1>
-          <p className="text-[var(--muted)]">A 60-second check. Quiet hours stay quiet. Nudges are in-app in this version.</p>
+        </label>
+        <label className="block">
+          <span className="kicker">Sleep target · {sleepTarget} hours</span>
+          <input
+            type="range"
+            min={5}
+            max={10}
+            step={0.5}
+            value={sleepTarget}
+            onChange={(e) => setSleepTarget(Number(e.target.value))}
+            className="w-full mt-3"
+          />
+        </label>
+        <label className="block">
+          <span className="kicker">Daily pulse hour · {String(pulseHour).padStart(2, "0")}:00</span>
+          <p className="text-sm text-[var(--muted)] mt-1">Sixty seconds. Then you are done.</p>
           <input
             type="range"
             min={5}
             max={21}
             value={pulseHour}
             onChange={(e) => setPulseHour(Number(e.target.value))}
-            className="w-full"
+            className="w-full mt-3"
           />
-          <p className="tabular text-2xl">{String(pulseHour).padStart(2, "0")}:00</p>
-        </section>
-      )}
-      <div className="mt-10 flex gap-3">
-        {step > 0 && (
-          <button type="button" className="px-5 py-3 rounded-full border hairline" onClick={() => setStep(step - 1)}>
-            Back
-          </button>
-        )}
-        <button
-          type="button"
-          className="btn-primary flex-1 py-3 rounded-full disabled:opacity-60"
-          disabled={busy}
-          onClick={() => (step < 3 ? setStep(step + 1) : finish())}
-        >
-          {step < 3 ? "Continue" : busy ? "Saving…" : "Enter Ascend"}
-        </button>
-      </div>
+        </label>
+        <label className="flex items-start gap-3 card p-4">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4"
+            checked={emailPulse}
+            onChange={(e) => setEmailPulse(e.target.checked)}
+          />
+          <span>
+            <span className="block font-medium">Email me at pulse hour</span>
+            <span className="block text-sm text-[var(--muted)] mt-1">
+              A one-tap link to today&apos;s pulse. Time zone {tz}. You can turn this off later.
+            </span>
+          </span>
+        </label>
+      </section>
+      <button
+        type="button"
+        className="btn-primary mt-10 w-full py-3 rounded-full disabled:opacity-60"
+        disabled={busy}
+        onClick={() => finish()}
+      >
+        {busy ? "Saving…" : "Enter Ascend"}
+      </button>
     </main>
   );
 }

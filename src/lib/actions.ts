@@ -3,11 +3,16 @@ import { addDays, isoDate, startOfWeek } from "./dates";
 import { actionTypeFromText, recordEffectiveness } from "./effectiveness";
 
 export function shrinkText(text: string): string {
-  return text
-    .replace(/(\d+)\s*times/i, (_, n) => `${Math.max(1, Number(n) - 1)} times`)
-    .replace(/(\d+)\s*min/i, (_, n) => `${Math.max(5, Math.round(Number(n) * 0.6))} min`)
-    .replace(/(\d+)\s*minutes/i, (_, n) => `${Math.max(5, Math.round(Number(n) * 0.6))} minutes`)
-    .replace(/(\d+)\s*km/i, (_, n) => `${Math.max(1, Number(n) - 1)} km`);
+  let out = text.replace(/(\d+)\s*times/i, (_, n) => `${Math.max(1, Number(n) - 1)} times`);
+  if (/\d+\s*minutes/i.test(out)) {
+    out = out.replace(
+      /(\d+)\s*minutes/i,
+      (_, n) => `${Math.max(5, Math.round(Number(n) * 0.6))} minutes`,
+    );
+  } else {
+    out = out.replace(/(\d+)\s*min/i, (_, n) => `${Math.max(5, Math.round(Number(n) * 0.6))} min`);
+  }
+  return out.replace(/(\d+)\s*km/i, (_, n) => `${Math.max(1, Number(n) - 1)} km`);
 }
 
 export async function followThrough(
@@ -68,6 +73,35 @@ export async function followThrough(
       );
     }
   }
+}
+
+export async function shrinkNow(userId: string, actionId?: string) {
+  const week = isoDate(startOfWeek(new Date()));
+  const actions = await sql<{
+    id: string;
+    text: string;
+    expected_metric: string | null;
+  }>(
+    actionId
+      ? `select id, text, expected_metric from actions where user_id = $1 and id = $2 and status = 'active'`
+      : `select id, text, expected_metric from actions where user_id = $1 and status = 'active' order by created_at asc limit 1`,
+    actionId ? [userId, actionId] : [userId],
+  );
+  const a = actions[0];
+  if (!a) return { ok: false as const, error: "none" };
+  const shrunk = shrinkText(a.text);
+  await sql(`update actions set status = 'shrunk' where id = $1 and user_id = $2`, [a.id, userId]);
+  const id = nid("a");
+  await sql(
+    `insert into actions (id, user_id, text, status, expected_metric, created_by, shrinking_of, week_start, due_on)
+     values ($1,$2,$3,'active',$4,'coach',$5,$6,$7)`,
+    [id, userId, shrunk, a.expected_metric, a.id, week, isoDate(addDays(new Date(), 7))],
+  );
+  await sql(
+    `insert into action_events (id, action_id, user_id, kind, barrier_tags) values ($1,$2,$3,'shrunk',$4::jsonb)`,
+    [nid("ae"), a.id, userId, asJson([])],
+  );
+  return { ok: true as const, id, text: shrunk };
 }
 
 export function implementationIntention(verbQty: string, trigger: string): string {

@@ -11,9 +11,11 @@ export function SettingsView() {
   const [name, setName] = useState(p.displayName);
   const [tone, setTone] = useState(p.tone);
   const [hour, setHour] = useState(p.pulseHour);
+  const [emailPulse, setEmailPulse] = useState(p.emailPulse !== false);
   const [values, setValues] = useState(p.values);
   const [constraints, setConstraints] = useState(p.constraints);
   const [msg, setMsg] = useState("");
+  const [mailBusy, setMailBusy] = useState(false);
 
   async function save() {
     await api("/api/settings", {
@@ -22,6 +24,7 @@ export function SettingsView() {
         displayName: name,
         tone,
         pulseHour: hour,
+        emailPulse,
         values,
         constraints,
       }),
@@ -64,6 +67,46 @@ export function SettingsView() {
         <span className="kicker">Daily pulse hour · {String(hour).padStart(2, "0")}:00</span>
         <input type="range" min={5} max={21} value={hour} onChange={(e) => setHour(Number(e.target.value))} className="w-full mt-2" />
       </label>
+      <label className="flex items-start gap-3 card p-4">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4"
+          checked={emailPulse}
+          onChange={(e) => setEmailPulse(e.target.checked)}
+        />
+        <span>
+          <span className="block font-medium">Email me at pulse hour</span>
+          <span className="block text-sm text-[var(--muted)] mt-1">
+            One tap from the email opens today&apos;s pulse. Time zone {p.tz}.
+          </span>
+        </span>
+      </label>
+      <button
+        type="button"
+        className="w-full py-3 rounded-full border hairline disabled:opacity-60"
+        disabled={mailBusy}
+        onClick={async () => {
+          setMailBusy(true);
+          try {
+            await api("/api/settings", {
+              method: "PATCH",
+              body: JSON.stringify({ pulseHour: hour, emailPulse }),
+            });
+            await api("/api/mail/test", { method: "POST" });
+            setMsg("Test email sent");
+          } catch (err) {
+            const code = err instanceof Error ? err.message : "";
+            if (code === "not_configured") setMsg("Email is not configured yet. Add a Resend key in app secrets.");
+            else if (code === "too_many") setMsg("Wait a few minutes before sending another test.");
+            else if (code === "no_email") setMsg("This account needs an email address first.");
+            else setMsg("Could not send a test email.");
+          } finally {
+            setMailBusy(false);
+          }
+        }}
+      >
+        {mailBusy ? "Sending…" : "Send test email"}
+      </button>
       <div>
         <p className="kicker">Values</p>
         <div className="flex flex-wrap gap-2 mt-2">

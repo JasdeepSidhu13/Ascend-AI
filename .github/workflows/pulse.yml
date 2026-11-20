@@ -1,0 +1,22 @@
+name: Pulse email
+
+on:
+  schedule:
+    - cron: "8 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping pulse cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_ORIGIN: ${{ secrets.APP_ORIGIN }}
+        run: |
+          origin="${APP_ORIGIN:-https://ascend.apps.grok.bot}"
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET is not set; skip"
+            exit 0
+          fi
+          curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$origin/api/cron/pulse"

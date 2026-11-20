@@ -26,6 +26,7 @@ export function InsightCard({
           <span className="block mt-1 text-[var(--ink)]">{insight.suggestedAction}</span>
         </p>
       )}
+      {featured && <InsightActions id={insight.id} hasStep={Boolean(insight.suggestedAction)} onDone={onRated} />}
       <div className="mt-5 flex flex-wrap items-center gap-3">
         {onOpen && (
           <button type="button" className="text-sm underline underline-offset-4" onClick={onOpen}>
@@ -35,6 +36,65 @@ export function InsightCard({
         <Rating id={insight.id} useful={insight.useful} onRated={onRated} />
       </div>
     </article>
+  );
+}
+
+function InsightActions({
+  id,
+  hasStep,
+  onDone,
+}: {
+  id: string;
+  hasStep: boolean;
+  onDone?: () => void;
+}) {
+  const [busy, setBusy] = useState<"take" | "shrink" | null>(null);
+  const [note, setNote] = useState("");
+
+  async function act(kind: "take" | "shrink") {
+    setBusy(kind);
+    setNote("");
+    try {
+      const res = await api<{ text?: string }>(`/api/insights/${id}/act`, {
+        method: "POST",
+        body: JSON.stringify({ kind }),
+      });
+      setNote(kind === "take" ? "This week’s step is on Home." : `Shrunk to: ${res.text ?? "a smaller step"}`);
+      onDone?.();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "max_active") setNote("You already have three actions. Finish or shrink one first.");
+      else if (msg === "no_action" || msg === "no_step") setNote("No active step to change yet.");
+      else setNote("Could not update that step.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mt-5 space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {hasStep && (
+          <button
+            type="button"
+            className="btn-primary px-4 py-2 rounded-full text-sm disabled:opacity-60"
+            disabled={busy != null}
+            onClick={() => act("take")}
+          >
+            {busy === "take" ? "Saving…" : "Take this step"}
+          </button>
+        )}
+        <button
+          type="button"
+          className="px-4 py-2 rounded-full text-sm border hairline disabled:opacity-60"
+          disabled={busy != null}
+          onClick={() => act("shrink")}
+        >
+          {busy === "shrink" ? "Shrinking…" : "Shrink last week’s step"}
+        </button>
+      </div>
+      {note && <p className="text-sm text-[var(--muted)]">{note}</p>}
+    </div>
   );
 }
 

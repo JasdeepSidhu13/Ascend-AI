@@ -51,6 +51,7 @@ export type UserRow = {
   quiet_start: number;
   quiet_end: number;
   reminder_weekday: number;
+  email_pulse?: boolean;
   onboarding_completed_at: string | Date | null;
   sample_data: boolean;
   password_hash?: string | null;
@@ -74,6 +75,7 @@ export function toProfile(
     quietStart: row.quiet_start,
     quietEnd: row.quiet_end,
     reminderWeekday: row.reminder_weekday,
+    emailPulse: row.email_pulse !== false,
     onboardingCompletedAt: row.onboarding_completed_at
       ? new Date(row.onboarding_completed_at).toISOString()
       : null,

@@ -91,6 +91,7 @@ export type Profile = {
   quietStart: number;
   quietEnd: number;
   reminderWeekday: number;
+  emailPulse: boolean;
   onboardingCompletedAt: string | null;
   sampleData: boolean;
   simulated: boolean;
