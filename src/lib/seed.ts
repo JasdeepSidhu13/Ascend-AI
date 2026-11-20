@@ -309,10 +309,19 @@ export async function clearUserData(userId: string) {
     "notifications",
     "events",
     "action_effectiveness",
+    "coach_messages",
+    "share_links",
+    "login_tokens",
+    "auth_sessions",
   ];
   for (const t of tables) {
     await sql(`delete from ${t} where user_id = $1`, [userId]);
   }
+  await sql(
+    `delete from question_rules where question_id in (select id from questions where owner_id = $1)`,
+    [userId],
+  );
+  await sql(`delete from questions where owner_id = $1`, [userId]);
   await sql(`delete from users where id = $1`, [userId]);
 }
 

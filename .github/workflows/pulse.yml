@@ -14,9 +14,13 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           APP_ORIGIN: ${{ secrets.APP_ORIGIN }}
         run: |
-          origin="${APP_ORIGIN:-https://ascend.apps.grok.bot}"
-          if [ -z "$CRON_SECRET" ]; then
-            echo "CRON_SECRET is not set; skip"
+          if [ -z "$CRON_SECRET" ] || [ -z "$APP_ORIGIN" ]; then
+            echo "CRON_SECRET or APP_ORIGIN is not set; skip"
             exit 0
           fi
+          case "$APP_ORIGIN" in
+            https://*) ;;
+            *) echo "APP_ORIGIN must be https; skip"; exit 0 ;;
+          esac
+          origin="${APP_ORIGIN%/}"
           curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$origin/api/cron/pulse"

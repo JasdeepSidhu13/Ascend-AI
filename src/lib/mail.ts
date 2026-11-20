@@ -1,6 +1,6 @@
 import { hashToken, newToken } from "./crypto-pass";
 import { nid, sql } from "./db";
-import { appOrigin } from "./pulse";
+import { appOrigin, safeOrigin } from "./pulse";
 
 export function mailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
@@ -43,7 +43,8 @@ export async function sendPulseEmail(input: {
   const key = process.env.RESEND_API_KEY?.trim();
   if (!key) return { ok: false, error: "not_configured" };
   const from = process.env.PULSE_FROM_EMAIL?.trim() || "Ascend <onboarding@resend.dev>";
-  const origin = (input.origin || appOrigin()).replace(/\/$/, "");
+  const origin = safeOrigin(input.origin) ?? appOrigin();
+  if (!origin) return { ok: false, error: "no_origin" };
   const link = `${origin}/go/pulse?t=${encodeURIComponent(input.token)}`;
   const hour = String(input.hour).padStart(2, "0");
   const first = input.name.trim() || "there";

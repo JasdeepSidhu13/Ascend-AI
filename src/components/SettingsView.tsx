@@ -151,7 +151,7 @@ export function SettingsView() {
       </button>
       <section className="card p-5 space-y-3">
         <p className="kicker">Your data</p>
-        <p className="text-sm text-[var(--muted)]">One-click export. Full delete. Nothing is sent to an LLM except the small assembled context, and never for training.</p>
+        <p className="text-sm text-[var(--muted)]">One-click export. Full delete. Insights are computed here; nothing is sent to an outside language model.</p>
         {state?.quality && (
           <p className="text-sm text-[var(--muted)]">
             Helpful rate {state.quality.helpfulRate == null ? "not enough ratings" : `${state.quality.helpfulRate}%`}

@@ -46,8 +46,30 @@ export function dueForPulseEmail(user: PulseCandidate, now = new Date()): boolea
   return true;
 }
 
-export function appOrigin(): string {
+export function appOrigin(): string | null {
   const raw = process.env.APP_ORIGIN?.trim();
-  if (raw) return raw.replace(/\/$/, "");
-  return "https://ascend.apps.grok.bot";
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    if (local && url.protocol === "http:") return url.origin;
+    if (url.protocol !== "https:") return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+export function safeOrigin(raw: string | null | undefined): string | null {
+  const value = (raw ?? "").trim().replace(/\/$/, "");
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    if (local && url.protocol === "http:") return url.origin;
+    if (url.protocol !== "https:") return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
 }

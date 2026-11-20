@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { dateInZone, dueForPulseEmail, hourInZone } from "./pulse";
+import { appOrigin, dateInZone, dueForPulseEmail, hourInZone, safeOrigin } from "./pulse";
 
 const noonUtc = new Date("2026-11-20T12:00:00Z");
 
@@ -23,5 +23,19 @@ describe("pulse timing", () => {
     assert.equal(dueForPulseEmail({ ...base, pulseHour: 8 }, noonUtc), false);
     assert.equal(dueForPulseEmail({ ...base, alreadyPulsedToday: true }, noonUtc), false);
     assert.equal(dueForPulseEmail({ ...base, lastPulseEmailOn: "2026-11-20" }, noonUtc), false);
+  });
+
+  it("requires a configured https origin and has no host fallback", () => {
+    const prev = process.env.APP_ORIGIN;
+    delete process.env.APP_ORIGIN;
+    assert.equal(appOrigin(), null);
+    process.env.APP_ORIGIN = "https://example.test/app/";
+    assert.equal(appOrigin(), "https://example.test");
+    process.env.APP_ORIGIN = "http://evil.test";
+    assert.equal(appOrigin(), null);
+    if (prev == null) delete process.env.APP_ORIGIN;
+    else process.env.APP_ORIGIN = prev;
+    assert.equal(safeOrigin("javascript:alert(1)"), null);
+    assert.equal(safeOrigin("https://example.test"), "https://example.test");
   });
 });

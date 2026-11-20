@@ -1,9 +1,9 @@
-import { AREAS, METRIC_LABELS, questionById } from "./catalog";
+import { questionById } from "./catalog";
 import { asJson, nid, readJson, sql } from "./db";
 import { detectCrisis } from "./crisis";
 import { followThrough } from "./actions";
 import { extractFacts, writeEpisode } from "./memory";
-import { embedText, similarity } from "./embed";
+import { embedText } from "./embed";
 import { ingestResponses, loadSeries, recordEvent } from "./metrics";
 import {
   computeFindings,
@@ -11,9 +11,9 @@ import {
   type GoalPaceInput,
   type Series,
 } from "./findings";
-import { narrateFinding, narrateWithModel } from "./narrate";
-import { fallbackDrafts, validateInsight } from "./validator";
-import type { Finding, InsightDraft, Tone } from "./types";
+import { narrateFinding } from "./narrate";
+import { fallbackDrafts } from "./validator";
+import type { Finding, Tone } from "./types";
 import { isoDate, startOfWeek } from "./dates";
 
 type ResponseRow = {
@@ -129,24 +129,7 @@ export async function recomputeInsights(userId: string, sessionId?: string) {
   }
   const top = rankTop(findings, 5);
   const recentBodies = recent.map((r) => r.body);
-  let drafts: InsightDraft[] = [];
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim() ?? "";
-  if (apiKey && top.length) {
-    const ctx = await assembleContext(userId, top);
-    const fromModel = await narrateWithModel({
-      findings: top,
-      tone,
-      goals: ctx.goals,
-      memories: ctx.facts,
-      apiKey,
-    });
-    if (fromModel) {
-      drafts = fromModel.filter((d) => validateInsight(d, top, recentBodies).ok);
-    }
-  }
-  if (drafts.length < 3) {
-    drafts = fallbackDrafts(top, (f) => narrateFinding(f, tone), recentBodies);
-  }
+  const drafts = fallbackDrafts(top, (f) => narrateFinding(f, tone), recentBodies);
   const ids: string[] = [];
   const titles: string[] = [];
   for (const [rank, d] of drafts.slice(0, 5).entries()) {
@@ -162,8 +145,8 @@ export async function recomputeInsights(userId: string, sessionId?: string) {
         d.body,
         d.suggestedAction,
         d.confidence,
-        apiKey ? "claude" : "rules",
-        apiKey ? "claude-v1" : "rules-v1",
+        "rules",
+        "rules-v1",
         asJson(top.filter((f) => d.findingIds.includes(f.id))),
         rank,
       ],
@@ -294,56 +277,6 @@ async function learnedWeights(userId: string): Promise<Partial<Record<Finding["t
     if (v.n >= 3) out[t as Finding["type"]] = 0.6 + (v.up / v.n) * 0.8;
   }
   return out;
-}
-
-export async function assembleContext(userId: string, findings: Finding[]) {
-  const goals = await sql<{ title: string }>(
-    `select title from goals where user_id = $1 and status = 'active'`,
-    [userId],
-  );
-  const areas = new Set(
-    findings.flatMap((f) => f.metricKeys.map((k) => METRIC_LABELS[k]?.area).filter(Boolean)),
-  );
-  const areaIds = AREAS.filter((a) => areas.has(a.key)).map((a) => a.id);
-  const facts = await sql<{ text: string }>(
-    `select text from memories
-     where user_id = $1 and layer = 'fact' and confirmed = true and paused = false
-       and superseded_by is null
-       and (valid_until is null or valid_until >= current_date)
-       ${areaIds.length ? "and (area_id = any($2::text[]) or area_id is null)" : ""}
-     order by confidence desc limit 8`,
-    areaIds.length ? [userId, areaIds] : [userId],
-  );
-  const episodes = await sql<{ text: string }>(
-    `select text from memories where user_id = $1 and layer = 'episode'
-     order by created_at desc limit 3`,
-    [userId],
-  );
-  const recentText = findings.map((f) => f.summary).join(" ");
-  const query = embedText(recentText);
-  const past = await sql<{ value_text: string; embedding: unknown }>(
-    `select r.value_text, e.embedding
-     from response_embeddings e
-     join responses r on r.id = e.response_id
-     where e.user_id = $1 and r.value_text is not null
-     order by r.answered_at desc limit 40`,
-    [userId],
-  );
-  const similar = past
-    .map((p) => ({
-      text: p.value_text,
-      score: similarity(query, readJson<number[]>(p.embedding, [])),
-    }))
-    .filter((p) => p.score > 0.15 && p.text)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map((p) => p.text);
-  return {
-    goals: goals.map((g) => g.title),
-    facts: facts.map((f) => f.text),
-    episodes: episodes.map((e) => e.text),
-    similar,
-  };
 }
 
 async function promoteGenerated(userId: string) {

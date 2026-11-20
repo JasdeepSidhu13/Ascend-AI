@@ -14,7 +14,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
     if (!owned[0]) return json({ error: "not_found" }, 404);
     if (owned[0].completed_at) return json({ crisis: false, insights: [], already: true });
-    if (rateLimited(`complete:${profile.id}:${id}`, 2, 10 * 60 * 1000)) {
+    if (
+      rateLimited(`complete:${profile.id}:${id}`, 2, 10 * 60 * 1000) ||
+      rateLimited(`complete-user:${profile.id}`, 12, 60 * 60 * 1000)
+    ) {
       return json({ error: "too_many" }, 429);
     }
     const result = await completeSession(profile.id, id);

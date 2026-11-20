@@ -1,12 +1,13 @@
 import { sql } from "./db";
 import { createLoginToken, mailConfigured, sendPulseEmail } from "./mail";
-import { dateInZone, dueForPulseEmail } from "./pulse";
+import { appOrigin, dateInZone, dueForPulseEmail } from "./pulse";
 
 export async function sendDuePulseEmails(now = new Date()): Promise<{
   sent: number;
   skipped: string;
 }> {
-  if (!mailConfigured()) return { sent: 0, skipped: "not_configured" };
+  const origin = appOrigin();
+  if (!mailConfigured() || !origin) return { sent: 0, skipped: "not_configured" };
   const users = await sql<{
     id: string;
     email: string;
@@ -53,6 +54,7 @@ export async function sendDuePulseEmails(now = new Date()): Promise<{
       name: u.display_name,
       hour: u.pulse_hour,
       token,
+      origin,
     });
     if (!result.ok) continue;
     await sql(`update users set last_pulse_email_on = $2::date where id = $1`, [u.id, today]);

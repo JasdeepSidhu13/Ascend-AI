@@ -1,14 +1,14 @@
 import { hashPassword, normalizeEmail, validEmail, validPassword } from "@/lib/crypto-pass";
 import { nid, sql } from "@/lib/db";
 import { json } from "@/lib/auth";
-import { clientKey, rateLimited } from "@/lib/limit";
+import { rateLimited } from "@/lib/limit";
 import { createSession, sessionCookie } from "@/lib/session";
 import { ensureCatalog } from "@/lib/seed";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  if (rateLimited(clientKey(request, "signup"), 8, 60 * 60 * 1000)) {
+  if (rateLimited("signup", 10, 60 * 60 * 1000)) {
     return json({ error: "too_many" }, 429);
   }
   const body = (await request.json().catch(() => ({}))) as {
@@ -20,6 +20,9 @@ export async function POST(request: Request) {
   const password = body.password ?? "";
   const displayName = (body.displayName ?? "").trim().slice(0, 80);
   if (!validEmail(email)) return json({ error: "invalid_email" }, 400);
+  if (rateLimited(`signup:${email}`, 3, 60 * 60 * 1000)) {
+    return json({ error: "too_many" }, 429);
+  }
   if (!validPassword(password)) return json({ error: "weak_password" }, 400);
   await ensureCatalog();
   const existing = await sql<{ id: string }>(
