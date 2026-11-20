@@ -1,6 +1,7 @@
 import { nid, sql } from "./db";
 import { addDays, isoDate } from "./dates";
 import { implementationIntention } from "./actions";
+import { activeGoalForMetric } from "./goals";
 
 export type Program = {
   id: string;
@@ -83,17 +84,21 @@ export async function applyProgram(userId: string, programId: string) {
   const area = await sql<{ id: string }>(`select id from areas where key = $1 limit 1`, [program.areaKey]);
   const areaId = area[0]?.id ?? "area_health";
   const due = isoDate(addDays(new Date(), program.weeks * 7));
-  const goalId = nid("g");
-  await sql(
-    `insert into goals (id, user_id, area_id, title, why, starts_on, due_on, status, vision)
-     values ($1,$2,$3,$4,$5,$6,$7,'active',$8)`,
-    [goalId, userId, areaId, program.goalTitle, program.why, isoDate(new Date()), due, program.blurb],
-  );
-  await sql(
-    `insert into key_results (id, goal_id, user_id, metric_key, baseline, target, unit, due_on)
-     values ($1,$2,$3,$4,$5,$6,$7,$8)`,
-    [nid("kr"), goalId, userId, program.metricKey, program.baseline, program.target, program.unit, due],
-  );
+  let goalId = await activeGoalForMetric(userId, program.metricKey);
+  const reused = Boolean(goalId);
+  if (!goalId) {
+    goalId = nid("g");
+    await sql(
+      `insert into goals (id, user_id, area_id, title, why, starts_on, due_on, status, vision)
+       values ($1,$2,$3,$4,$5,$6,$7,'active',$8)`,
+      [goalId, userId, areaId, program.goalTitle, program.why, isoDate(new Date()), due, program.blurb],
+    );
+    await sql(
+      `insert into key_results (id, goal_id, user_id, metric_key, baseline, target, unit, due_on)
+       values ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [nid("kr"), goalId, userId, program.metricKey, program.baseline, program.target, program.unit, due],
+    );
+  }
   const active = await sql<{ c: number }>(
     `select count(*)::int as c from actions where user_id = $1 and status = 'active'`,
     [userId],
@@ -115,5 +120,5 @@ export async function applyProgram(userId: string, programId: string) {
       ],
     );
   }
-  return { ok: true as const, goalId, program };
+  return { ok: true as const, goalId, program, reused };
 }

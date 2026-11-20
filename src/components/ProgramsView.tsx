@@ -24,10 +24,17 @@ export function ProgramsView() {
     setBusyId(programId);
     setMsg("");
     try {
-      await api("/api/programs", { method: "POST", body: JSON.stringify({ programId }) });
+      const res = await api<{ reused?: boolean }>("/api/programs", {
+        method: "POST",
+        body: JSON.stringify({ programId }),
+      });
       await refresh();
       setAdded(programId);
-      setMsg("Added to your goals. At most three actions stay active.");
+      setMsg(
+        res.reused
+          ? "That measure already has a goal. This week's steps went onto it instead of cloning another card."
+          : "Added to your board. At most three actions stay active.",
+      );
     } catch {
       setMsg("Could not add that program. Try again.");
     }

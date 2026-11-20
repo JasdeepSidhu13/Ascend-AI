@@ -1,5 +1,6 @@
 import { AREAS } from "@/lib/catalog";
 import { nid, sql } from "@/lib/db";
+import { pauseDuplicateGoals } from "@/lib/goals";
 import { json, withProfile } from "@/lib/http";
 import type { GoalStatus } from "@/lib/types";
 
@@ -94,6 +95,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         );
       }
     }
+    if (body.status === "active") await pauseDuplicateGoals(profile.id, id);
     return json({ ok: true });
   });
 }

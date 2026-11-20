@@ -3,6 +3,7 @@ import { readJson, sql } from "./db";
 import { emptyTeaching } from "./engine";
 import { paceStatus } from "./findings";
 import { projectLinear, round, slope } from "./stats";
+import { pauseDuplicateGoals } from "./goals";
 import { dueSession } from "./sessions";
 import { dueNudges } from "./nudges";
 import type { Finding, Profile } from "./types";
@@ -50,6 +51,7 @@ export async function dashboardState(profile: Profile) {
 
   const wheel = await lifeWheel(userId);
   const trends = await areaTrends(userId);
+  await pauseDuplicateGoals(userId);
   const goals = await goalPaces(userId);
   const actions = await sql<{
     id: string;
@@ -58,8 +60,9 @@ export async function dashboardState(profile: Profile) {
     status: string;
     due_on: string | null;
     expected_metric: string | null;
+    goal_id: string | null;
   }>(
-    `select id, text, trigger, status, due_on::text as due_on, expected_metric
+    `select id, text, trigger, status, due_on::text as due_on, expected_metric, goal_id
      from actions where user_id = $1 and status in ('active','done','skipped','shrunk')
      order by created_at desc limit 12`,
     [userId],
@@ -91,7 +94,9 @@ export async function dashboardState(profile: Profile) {
   const nudges = await dueNudges(profile, due);
   const helpful = feedback.filter((f) => f.useful).length;
   const ratedN = feedback.length;
-  const offTrack = goals.filter((g) => g.keyResults.some((kr) => kr.status === "off_track"));
+  const offTrack = goals.filter(
+    (g) => g.status === "active" && g.keyResults.some((kr) => kr.status === "off_track"),
+  );
 
   return {
     profile,
@@ -102,6 +107,7 @@ export async function dashboardState(profile: Profile) {
     goals,
     actions: actions.map((a) => ({
       ...a,
+      goalId: a.goal_id,
       dueOn: a.due_on?.slice(0, 10) ?? null,
       metricLabel: a.expected_metric ? METRIC_LABELS[a.expected_metric]?.label ?? a.expected_metric : null,
     })),
@@ -222,7 +228,8 @@ async function goalPaces(userId: string) {
     vision: string;
   }>(
     `select id, title, why, area_id, due_on::text as due_on, status, vision
-     from goals where user_id = $1 order by due_on`,
+     from goals where user_id = $1
+     order by case status when 'active' then 0 when 'paused' then 1 when 'completed' then 2 else 3 end, due_on`,
     [userId],
   );
   const out = [];

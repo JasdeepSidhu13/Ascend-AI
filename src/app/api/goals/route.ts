@@ -1,5 +1,6 @@
 import { AREAS } from "@/lib/catalog";
 import { nid, sql } from "@/lib/db";
+import { activeGoalForMetric } from "@/lib/goals";
 import { json, withProfile } from "@/lib/http";
 import { isoDate } from "@/lib/dates";
 
@@ -18,6 +19,10 @@ export async function POST(request: Request) {
       unit?: string;
     };
     if (!body.title?.trim()) return json({ error: "title_required" }, 400);
+    if (body.metricKey) {
+      const existing = await activeGoalForMetric(profile.id, body.metricKey);
+      if (existing) return json({ error: "duplicate_metric", id: existing }, 409);
+    }
     const area = AREAS.find((a) => a.key === body.areaKey) ?? AREAS[2];
     const id = nid("g");
     await sql(
