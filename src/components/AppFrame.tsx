@@ -56,6 +56,7 @@ export type AppState = {
     why: string;
     vision: string;
     area: string;
+    areaKey: string;
     dueOn: string;
     status: string;
     keyResults: {
