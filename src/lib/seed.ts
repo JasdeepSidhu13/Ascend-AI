@@ -312,7 +312,6 @@ export async function clearUserData(userId: string) {
     "coach_messages",
     "share_links",
     "login_tokens",
-    "auth_sessions",
   ];
   for (const t of tables) {
     await sql(`delete from ${t} where user_id = $1`, [userId]);
@@ -322,6 +321,11 @@ export async function clearUserData(userId: string) {
     [userId],
   );
   await sql(`delete from questions where owner_id = $1`, [userId]);
+}
+
+export async function deleteAccount(userId: string) {
+  await clearUserData(userId);
+  await sql(`delete from auth_sessions where user_id = $1`, [userId]);
   await sql(`delete from users where id = $1`, [userId]);
 }
 

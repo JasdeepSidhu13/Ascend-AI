@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { SampleBanner, useApp } from "./AppFrame";
+import { SampleBanner, useApp, type AppState } from "./AppFrame";
 import { Heatmap, LifeWheel, PaceBar, Sparkline } from "./charts";
 import { EvidenceSheet, InsightCard } from "./InsightCard";
 import { greeting } from "@/lib/dates";
@@ -183,40 +183,7 @@ export function HomeView() {
         </div>
       </section>
 
-      <section className="card p-5">
-        <p className="kicker">Goal pace</p>
-        <h2 className="display text-2xl mt-1 mb-4">Projection, not hope</h2>
-        {s.goals.length === 0 ? (
-          <p className="text-[var(--muted)]">Add a quarterly goal with a key result and we will draw the line.</p>
-        ) : (
-          <div className="space-y-6">
-            {s.goals.map((g) => (
-              <div key={g.id}>
-                <div className="flex justify-between gap-3">
-                  <h3 className="font-medium">{g.title}</h3>
-                  <span className="kicker">{g.keyResults[0]?.status.replace("_", " ") ?? g.status}</span>
-                </div>
-                {g.keyResults.map((kr) => (
-                  <div key={kr.id} className="mt-2">
-                    <p className="text-sm text-[var(--muted)]">
-                      <span className="tabular">{kr.current} {kr.unit}</span>
-                      {" "}now · projected {kr.projected} · target {kr.target} by {kr.dueOn}
-                    </p>
-                    <PaceBar
-                      baseline={kr.baseline}
-                      current={kr.current}
-                      target={kr.target}
-                      projected={kr.projected}
-                      status={kr.status}
-                    />
-                    <Sparkline points={kr.points} target={kr.target} />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <FeaturedGoal goals={s.goals} />
 
       <section className="card p-5">
         <p className="kicker">Habits</p>
@@ -253,6 +220,58 @@ export function HomeView() {
 
       {evidence && <EvidenceSheet insight={evidence} onClose={() => setEvidence(null)} />}
     </main>
+  );
+}
+
+function FeaturedGoal({ goals }: { goals: AppState["goals"] }) {
+  const active = goals.filter((g) => g.status === "active");
+  const focus =
+    active.find((g) => g.keyResults.some((kr) => kr.status === "off_track")) ??
+    active.find((g) => g.keyResults.some((kr) => kr.status === "at_risk")) ??
+    active[0];
+  const rest = active.filter((g) => g.id !== focus?.id);
+  return (
+    <section className="card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="kicker">This quarter</p>
+          <h2 className="display text-2xl mt-1">{focus ? focus.title : "No active goal"}</h2>
+        </div>
+        <Link href="/goals" className="text-sm underline underline-offset-4 shrink-0">
+          All goals
+        </Link>
+      </div>
+      {!focus ? (
+        <p className="text-[var(--muted)] mt-3">Add one numbered goal. Home will keep the one that needs you.</p>
+      ) : (
+        focus.keyResults.slice(0, 1).map((kr) => (
+          <div key={kr.id} className="mt-3">
+            <p className="text-sm text-[var(--muted)]">
+              <span className="tabular">{kr.current} {kr.unit}</span>
+              {" "}now · projected {kr.projected} · {kr.target} {kr.unit} by {kr.dueOn}
+            </p>
+            <PaceBar
+              baseline={kr.baseline}
+              current={kr.current}
+              target={kr.target}
+              projected={kr.projected}
+              status={kr.status}
+            />
+            <Sparkline points={kr.points} target={kr.target} />
+          </div>
+        ))
+      )}
+      {rest.length > 0 && (
+        <ul className="mt-4 pt-3 border-t hairline space-y-1 text-sm text-[var(--muted)]">
+          {rest.map((g) => (
+            <li key={g.id} className="flex justify-between gap-3">
+              <span className="truncate">{g.title}</span>
+              <span className="kicker shrink-0">{g.area}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

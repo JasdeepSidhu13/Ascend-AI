@@ -82,6 +82,7 @@ export type AppState = {
     dueOn: string | null;
     expected_metric: string | null;
     metricLabel: string | null;
+    goalId: string | null;
   }[];
   heatmap: { key: string; label: string; days: { date: string; value: number }[] }[];
   memories: {

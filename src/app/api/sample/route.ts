@@ -1,3 +1,4 @@
+import { sql } from "@/lib/db";
 import { json, withProfile } from "@/lib/http";
 import { rateLimited } from "@/lib/limit";
 import { clearUserData, seedSample } from "@/lib/seed";
@@ -16,6 +17,8 @@ export async function POST(request: Request) {
         email: profile.email,
         name: profile.displayName || "Alex",
       });
+    } else {
+      await sql(`update users set sample_data = false where id = $1`, [profile.id]);
     }
     void identity;
     return json({ ok: true });
