@@ -118,6 +118,8 @@ export function HomeView() {
         )}
       </section>
 
+      <FeaturedGoal goals={s.goals} />
+
       <section className="grid lg:grid-cols-2 gap-6">
         <div className="card p-5">
           <p className="kicker">Life wheel</p>
@@ -182,8 +184,6 @@ export function HomeView() {
           </ul>
         </div>
       </section>
-
-      <FeaturedGoal goals={s.goals} />
 
       <section className="card p-5">
         <p className="kicker">Habits</p>

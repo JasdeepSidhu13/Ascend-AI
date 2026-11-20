@@ -42,8 +42,8 @@ export function GoalsView() {
   return (
     <main className="px-5 lg:px-10 max-w-3xl mx-auto py-4 space-y-8">
       <SampleBanner />
-      <header className="flex items-end justify-between gap-4">
-        <div>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="kicker">This quarter</p>
           <h1 className="display text-4xl mt-2">One goal per measure</h1>
           <p className="text-[var(--muted)] mt-2 max-w-md">
@@ -54,7 +54,7 @@ export function GoalsView() {
         </div>
         <button
           type="button"
-          className="btn-primary px-4 py-2 rounded-full text-sm shrink-0"
+          className="btn-primary px-4 py-2 rounded-full text-sm self-start shrink-0"
           onClick={() => {
             setEditing(null);
             setOpen(true);
