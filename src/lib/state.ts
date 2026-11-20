@@ -1,4 +1,4 @@
-import { AREA_SCORE_METRICS, AREAS, METRIC_LABELS } from "./catalog";
+import { AREA_SCORE_METRICS, AREAS, METRIC_LABELS, areaById } from "./catalog";
 import { readJson, sql } from "./db";
 import { emptyTeaching } from "./engine";
 import { paceStatus } from "./findings";
@@ -284,6 +284,7 @@ async function goalPaces(userId: string) {
       why: g.why,
       vision: g.vision,
       area: areaName(g.area_id),
+      areaKey: areaById(g.area_id)?.key ?? "health",
       dueOn: g.due_on.slice(0, 10),
       status: g.status,
       keyResults: mapped,

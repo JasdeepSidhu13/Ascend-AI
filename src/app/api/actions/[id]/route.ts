@@ -50,3 +50,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return json({ ok: true });
   });
 }
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return withProfile(_request, async (profile) => {
+    const owned = await sql<{ id: string }>(
+      `select id from actions where id = $1 and user_id = $2`,
+      [id, profile.id],
+    );
+    if (!owned[0]) return json({ error: "not_found" }, 404);
+    await sql(`delete from action_events where action_id = $1 and user_id = $2`, [id, profile.id]);
+    await sql(`delete from actions where id = $1 and user_id = $2`, [id, profile.id]);
+    return json({ ok: true });
+  });
+}
