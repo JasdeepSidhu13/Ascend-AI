@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { computeFindings, paceStatus, rankTop, type Series } from "./findings";
+import { computeFindings, earlyDailyFindings, paceStatus, rankTop, type Series } from "./findings";
 import { narrateFinding } from "./narrate";
 import { extractNumbers, numberAllowed, numbersInFindings, validateInsight } from "./validator";
 import { selectQuestions } from "./selector";
@@ -124,6 +124,40 @@ describe("insight engine", () => {
   });
 });
 
+describe("early daily findings", () => {
+  it("offers a low-confidence sentence after 3 daily points", () => {
+    const sleep = daySeries("health.sleep_hours", [6.2, 6.4, 6.8]);
+    const findings = earlyDailyFindings(
+      [sleep],
+      ["health.sleep_hours"],
+      [
+        {
+          krId: "kr1",
+          goalTitle: "Sleep 7.5 hours",
+          metricKey: "health.sleep_hours",
+          baseline: 6,
+          target: 7.5,
+          unit: "h",
+          dueOn: "2026-12-04",
+          values: [],
+          dates: [],
+        },
+      ],
+    );
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].stats.early, 1);
+    assert.equal(findings[0].stats.n, 3);
+    const draft = narrateFinding(findings[0], "gentle");
+    assert.equal(draft.confidence, "low");
+    assert.equal(validateInsight(draft, [findings[0]], []).ok, true);
+  });
+
+  it("stops early findings once 6 daily points exist", () => {
+    const sleep = daySeries("health.sleep_hours", [6, 6.1, 6.2, 6.3, 6.4, 6.5]);
+    assert.equal(earlyDailyFindings([sleep], []).length, 0);
+  });
+});
+
 describe("validator", () => {
   it("extracts numbers and matches findings", () => {
     const nums = extractNumbers("Sleep up 0.8 h since 7.4 vs 6.6");
@@ -158,6 +192,10 @@ describe("selector", () => {
 describe("actions and safety", () => {
   it("shrinks quantity instead of repeating", () => {
     assert.equal(shrinkText("Run 3 times this week, 25 min each"), "Run 2 times this week, 15 min each");
+    assert.equal(
+      shrinkText("When I close my laptop, I will walk for 20 minutes"),
+      "When I close my laptop, I will walk for 12 minutes",
+    );
   });
   it("routes crisis language away from coaching", () => {
     assert.equal(detectCrisis(["I want to die"]), true);

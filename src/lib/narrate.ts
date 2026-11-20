@@ -26,9 +26,22 @@ const templates: Record<Finding["type"], (f: Finding, tone: Tone) => InsightDraf
     const delta = num(f.stats, "delta");
     const recent = num(f.stats, "recent_mean");
     const prior = num(f.stats, "prior_mean");
+    const n = num(f.stats, "n");
+    const early = num(f.stats, "early") === 1;
+    const target = num(f.stats, "target");
     const dir = delta >= 0 ? "up" : "down";
     const abs = round(Math.abs(delta), 1);
     const u = unit(key);
+    if (early) {
+      const title = `${label(key)} is taking shape`;
+      const gap = target ? ` Target ${round(target, 1)}${u ? " " + u : ""}.` : "";
+      const body = `Over the last ${n} days, ${label(key).toLowerCase()} averaged ${round(recent, 1)}${u ? " " + u : ""}.${gap} This is early — a firmer trend lands around 6 mornings.`;
+      const suggestedAction =
+        tone === "direct"
+          ? `Keep tonight's wind-down 15 minutes earlier than last week.`
+          : `You might try lights out 15 minutes earlier tonight.`;
+      return draft(title, body, suggestedAction, f, "low");
+    }
     const title =
       dir === "up" ? `${label(key)} is lifting` : `${label(key)} has eased`;
     const weeks = num(f.stats, "recent_weeks") || 4;

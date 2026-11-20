@@ -368,9 +368,13 @@ function episodeFrom(responses: ResponseRow[], titles: string[]): string {
 }
 
 export function emptyTeaching(checkIns: number) {
+  const left = Math.max(0, 6 - checkIns);
   return {
-    wheel: "A life wheel appears after your first weekly reflection. Each spoke is one area scored 1–10.",
-    trends: `Area trends need 4 weekly points. You have ${checkIns}. About ${Math.max(0, 4 - checkIns)} more weekly check-ins.`,
-    insights: "Insights show once statistics have enough evidence — usually 6 data points for a trend.",
+    wheel: "A life wheel appears after a few weekly reflections. It is a readout, not a to-do list.",
+    trends: `Area trends need 4 weekly points. You have ${checkIns}.`,
+    insights:
+      checkIns >= 3
+        ? "A cautious sentence can appear after 3 mornings. It firms up around 6."
+        : `Keep the daily pulse. ${left} more morning${left === 1 ? "" : "s"} toward a cited insight.`,
   };
 }

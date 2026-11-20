@@ -14,6 +14,8 @@ export async function PATCH(request: Request) {
       quietEnd?: number;
       values?: string[];
       constraints?: string;
+      emailPulse?: boolean;
+      tz?: string;
     };
     await sql(
       `update users set
@@ -23,7 +25,9 @@ export async function PATCH(request: Request) {
          quiet_start = coalesce($5, quiet_start),
          quiet_end = coalesce($6, quiet_end),
          values_json = coalesce($7::jsonb, values_json),
-         constraints_text = coalesce($8, constraints_text)
+         constraints_text = coalesce($8, constraints_text),
+         email_pulse = coalesce($9, email_pulse),
+         tz = coalesce($10, tz)
        where id = $1`,
       [
         profile.id,
@@ -34,6 +38,8 @@ export async function PATCH(request: Request) {
         body.quietEnd ?? null,
         body.values ? asJson(body.values) : null,
         body.constraints ?? null,
+        body.emailPulse == null ? null : body.emailPulse,
+        body.tz ?? null,
       ],
     );
     return json({ ok: true });

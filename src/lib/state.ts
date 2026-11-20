@@ -17,6 +17,12 @@ export async function dashboardState(profile: Profile) {
     [userId],
   );
   const checkIns = weeklyCount[0]?.c ?? 0;
+  const pulseDays = await sql<{ c: number }>(
+    `select count(*)::int as c from sessions
+     where user_id = $1 and kind = 'pulse' and completed_at is not null`,
+    [userId],
+  );
+  const mornings = pulseDays[0]?.c ?? 0;
   const insights = await sql<{
     id: string;
     title: string;
@@ -108,8 +114,13 @@ export async function dashboardState(profile: Profile) {
     pendingRemember: pendingRemember.map((m) => ({ id: m.id, text: m.text, area: areaName(m.area_id) })),
     due,
     completion,
-    teaching: emptyTeaching(checkIns),
+    teaching: emptyTeaching(mornings || checkIns),
     checkIns,
+    progress: {
+      mornings,
+      earlyAt: 3,
+      firmAt: 6,
+    },
     monthly,
     sample: profile.sampleData,
     nudges,
